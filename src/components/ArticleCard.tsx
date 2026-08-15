@@ -1,4 +1,4 @@
-import { Bookmark, Check, ExternalLink, MoreHorizontal, Share2, Undo2 } from 'lucide-react';
+import { Bookmark, Check, ExternalLink, Share2, Undo2 } from 'lucide-react';
 import type { Article } from '../types';
 
 interface ArticleCardProps {
@@ -40,7 +40,6 @@ export function ArticleCard({ article, onToggleStar, onToggleRead }: ArticleCard
           <strong>{article.source}</strong>
           <span>{relativeTime(article.publishedAt)}{article.unread ? ' · New' : ''}</span>
         </div>
-        <button className="icon-button quiet" aria-label="More article actions"><MoreHorizontal /></button>
       </header>
 
       <div className="article-body">
