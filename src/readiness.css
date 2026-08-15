@@ -40,6 +40,10 @@
   cursor: default;
 }
 
+.dialog-actions.single-action {
+  grid-template-columns: 1fr;
+}
+
 .rail-footer {
   display: grid;
 }
