@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { FeedAccount } from '../types';
 import { addSubscription } from '../lib/freshrss';
 
@@ -9,19 +9,60 @@ interface AddFeedDialogProps {
   onAdded: () => void;
 }
 
+const focusableSelector = [
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  'a[href]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
 export function AddFeedDialog({ account, demo, onClose, onAdded }: AddFeedDialogProps) {
   const [url, setUrl] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const dialogRef = useRef<HTMLElement>(null);
 
-  // Escape is the platform-consistent dismissal path for the custom modal surface.
+  // A modal must keep keyboard focus inside itself and return focus to the
+  // invoking control when it closes. This preserves predictable navigation
+  // across browser, Linux WebView, and Android keyboard/accessibility input.
   useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(focusableSelector);
+    firstFocusable?.focus();
+
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !busy) onClose();
+      if (event.key === 'Escape' && !busy) {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const focusable = [...(dialogRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? [])];
+      if (!focusable.length) {
+        event.preventDefault();
+        dialogRef.current?.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previousFocus?.focus();
+    };
   }, [busy, onClose]);
 
   async function submit(event: FormEvent) {
@@ -48,11 +89,13 @@ export function AddFeedDialog({ account, demo, onClose, onAdded }: AddFeedDialog
       onMouseDown={(event) => event.currentTarget === event.target && !busy && onClose()}
     >
       <section
+        ref={dialogRef}
         className="dialog glaze-panel"
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-feed-title"
         aria-describedby="add-feed-description"
+        tabIndex={-1}
       >
         <p className="eyebrow">Follow the web</p>
         <h2 id="add-feed-title">Add a feed</h2>
@@ -67,7 +110,7 @@ export function AddFeedDialog({ account, demo, onClose, onAdded }: AddFeedDialog
             <button type="button" className="primary-button" onClick={onClose}>Close preview</button>
           </div>
         ) : (
-          <form onSubmit={submit}>
+          <form onSubmit={submit} aria-busy={busy}>
             <label>
               <span>Feed URL</span>
               <input
@@ -80,7 +123,6 @@ export function AddFeedDialog({ account, demo, onClose, onAdded }: AddFeedDialog
                 autoCorrect="off"
                 spellCheck={false}
                 required
-                autoFocus
               />
             </label>
             {error && <p className="error-banner" role="alert">{error}</p>}
