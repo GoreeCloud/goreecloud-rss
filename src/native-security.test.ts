@@ -3,11 +3,6 @@ import capability from '../src-tauri/capabilities/default.json';
 import tauriConfig from '../src-tauri/tauri.conf.json';
 
 type Permission = (typeof capability.permissions)[number];
-type ScopedPermission = Extract<Permission, { identifier: string }>;
-
-function isScopedPermission(permission: Permission): permission is ScopedPermission {
-  return typeof permission === 'object' && permission !== null && 'identifier' in permission;
-}
 
 function directiveSources(csp: string, directive: string): string[] {
   const value = csp
@@ -21,9 +16,9 @@ function directiveSources(csp: string, directive: string): string[] {
 describe('GoreeCloud Feed native security contract', () => {
   it('keeps Tauri HTTP permission scoped to FreshRSS and localhost development', () => {
     const httpPermission = capability.permissions.find(
-      (permission) => isScopedPermission(permission) && permission.identifier === 'http:default',
+      (permission) => typeof permission === 'object' && permission !== null && permission.identifier === 'http:default',
     );
-    const urls = isScopedPermission(httpPermission as Permission)
+    const urls = typeof httpPermission === 'object' && httpPermission !== null && 'allow' in httpPermission
       ? httpPermission.allow.map((entry) => entry.url)
       : [];
 
@@ -50,7 +45,7 @@ describe('GoreeCloud Feed native security contract', () => {
   });
 
   it('does not enable unrelated native capabilities', () => {
-    const serialized = JSON.stringify(capability.permissions);
+    const serialized = JSON.stringify(capability.permissions as Permission[]);
 
     expect(serialized).not.toMatch(/shell|clipboard|notification|process|fs:/i);
   });
