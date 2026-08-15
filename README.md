@@ -28,8 +28,6 @@ Production endpoints are deliberately source controlled:
 
 This prevents the production client from becoming a generic credential-bearing network requester.
 
-FreshRSS remains authoritative for subscription and category membership. The client preserves each loaded article's FreshRSS origin stream identity and derives category views from the current subscription list in memory; it does not create a second category database. After an add-feed mutation, the client explicitly reloads subscriptions from FreshRSS so source and category navigation does not remain stale.
-
 ## Current foundation
 
 Implemented or scaffolded in the current development milestone:
@@ -40,13 +38,13 @@ Implemented or scaffolded in the current development milestone:
 - Responsive Android/mobile layout with bottom navigation
 - Accessible navigation state and skip-to-timeline support
 - FreshRSS ClientLogin authentication
-- Subscription and category loading
+- Subscription loading with authoritative refresh after add-feed mutations
 - Home, Unread, and Saved timelines
-- FreshRSS-backed category filtering over loaded timeline items
+- FreshRSS-backed category filtering derived from subscription membership
 - Timeline search
 - Save/unsave article mutation
 - Read/unread article mutation
-- Add-feed mutation with authoritative subscription refresh and a non-mutating preview mode
+- Add-feed mutation with a non-mutating preview mode
 - Demo timeline for UI development without credentials
 - Functional sign-out that clears memory-held account and loaded client state
 - Plain-text handling of untrusted RSS summary HTML
@@ -55,8 +53,10 @@ Implemented or scaffolded in the current development milestone:
 - Minimal, scoped Tauri native permissions
 - Deterministic JavaScript and Rust dependency lockfiles
 - Locked dependency validation and npm vulnerability auditing in CI
+- Release metadata validation across npm, Tauri, and Cargo identities
 - Web unit/build CI
 - Linux desktop and Android APK build validation
+- Native artifact checksum and source-revision provenance evidence
 - PR-scoped CI concurrency that cancels superseded validation runs
 
 ## Development
@@ -65,6 +65,7 @@ Install exactly the committed JavaScript dependency graph:
 
 ```bash
 npm ci
+npm run release:check
 npm run dev
 npm test
 npm run build
@@ -111,6 +112,7 @@ See [docs/SECURITY.md](docs/SECURITY.md) for the full trust-boundary notes.
 - [Architecture](docs/ARCHITECTURE.md)
 - [Glaze UI contract](docs/GLAZE-UI.md)
 - [Security model](docs/SECURITY.md)
+- [Release and Stable promotion](docs/RELEASE.md)
 
 ## Release boundary
 
