@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import html from '../index.html?raw';
 import app from './App.tsx?raw';
+import addFeedDialog from './components/AddFeedDialog.tsx?raw';
 
 describe('GoreeCloud Feed Glaze UI readiness contract', () => {
   it('marks the controlled shell and preserves accessible navigation', () => {
@@ -38,6 +39,14 @@ describe('GoreeCloud Feed Glaze UI readiness contract', () => {
     expect(app).toContain('async function refresh(nextFilter = filter, reloadSubscriptions = false)');
     expect(app).toContain('!reloadSubscriptions && subscriptions.length');
     expect(app).toContain('onAdded={() => void refresh(filter, true)}');
+  });
+
+  it('enforces modal keyboard focus containment and restoration', () => {
+    expect(addFeedDialog).toContain('aria-modal="true"');
+    expect(addFeedDialog).toContain("event.key !== 'Tab'");
+    expect(addFeedDialog).toContain('previousFocus?.focus()');
+    expect(addFeedDialog).toContain('dialogRef.current?.querySelectorAll<HTMLElement>(focusableSelector)');
+    expect(addFeedDialog).toContain('aria-busy={busy}');
   });
 
   it('does not expose placeholder notifications or settings controls', () => {
