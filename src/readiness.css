@@ -1,0 +1,43 @@
+.account-chip {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: var(--surface-muted);
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  color: var(--muted);
+}
+
+.account-chip svg {
+  width: 22px;
+}
+
+.category-summary {
+  min-height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  color: var(--muted);
+}
+
+.category-summary small {
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-footer {
+  display: grid;
+}
+
+@media (max-width: 800px) {
+  .account-chip {
+    display: none;
+  }
+
+  .rail-footer {
+    display: grid !important;
+  }
+}
