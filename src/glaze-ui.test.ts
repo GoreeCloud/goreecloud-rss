@@ -1,9 +1,10 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import html from '../index.html?raw';
+import app from './App.tsx?raw';
+import readinessCss from './readiness.css?raw';
+import stylesCss from './styles.css?raw';
 
-const app = readFileSync(new URL('./App.tsx', import.meta.url), 'utf8');
-const css = readFileSync(new URL('./styles.css', import.meta.url), 'utf8') + readFileSync(new URL('./readiness.css', import.meta.url), 'utf8');
-const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const css = `${stylesCss}\n${readinessCss}`;
 
 describe('GoreeCloud Feed Glaze UI readiness contract', () => {
   it('marks the controlled shell and preserves accessible navigation', () => {
