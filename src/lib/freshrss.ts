@@ -1,4 +1,5 @@
 import type { Article, FeedAccount, Subscription, TimelineFilter } from '../types';
+import { appFetch, isNativeClient } from './transport';
 
 const STARRED = 'user/-/state/com.google/starred';
 const READ = 'user/-/state/com.google/read';
@@ -13,6 +14,9 @@ export class FreshRssError extends Error {
 export function normalizeApiBase(input: string): string {
   const trimmed = input.trim();
   if (trimmed.startsWith('/')) {
+    if (isNativeClient()) {
+      throw new FreshRssError('Desktop and Android require the full HTTPS FreshRSS API address.');
+    }
     return trimmed.replace(/\/$/, '');
   }
 
@@ -44,7 +48,7 @@ function endpoint(base: string, path: string): string {
 }
 
 async function request(account: FeedAccount, path: string, init: RequestInit = {}): Promise<Response> {
-  const response = await fetch(endpoint(account.apiBase, path), {
+  const response = await appFetch(endpoint(account.apiBase, path), {
     ...init,
     cache: 'no-store',
     credentials: 'omit',
@@ -63,7 +67,7 @@ async function request(account: FeedAccount, path: string, init: RequestInit = {
 export async function login(apiBaseInput: string, username: string, apiPassword: string): Promise<FeedAccount> {
   const apiBase = normalizeApiBase(apiBaseInput);
   const body = new URLSearchParams({ Email: username.trim(), Passwd: apiPassword });
-  const response = await fetch(endpoint(apiBase, '/accounts/ClientLogin'), {
+  const response = await appFetch(endpoint(apiBase, '/accounts/ClientLogin'), {
     method: 'POST',
     cache: 'no-store',
     credentials: 'omit',
@@ -145,7 +149,7 @@ export async function getTimeline(account: FeedAccount, filter: TimelineFilter, 
       publishedAt: new Date(publishedSec * 1000),
       unread: !categories.some((category) => category.endsWith('/state/com.google/read')),
       starred: categories.some((category) => category.endsWith('/state/com.google/starred')),
-      imageUrl: safeExternalUrl(enclosure?.href),
+      imageUrl: typeof enclosure?.type === 'string' && enclosure.type.startsWith('image/') ? safeExternalUrl(enclosure.href) : undefined,
       categories,
     } satisfies Article;
   });
