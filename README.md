@@ -59,6 +59,8 @@ Implemented or scaffolded in the current development milestone:
 - Native artifact checksum and source-revision provenance evidence
 - PR-scoped CI concurrency that cancels superseded validation runs
 
+The current repository state is a **Stable candidate under validation**, not an approved Stable release.
+
 ## Development
 
 Install exactly the committed JavaScript dependency graph:
