@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'src-tauri/**'
+      - 'public/feed-mark.svg'
       - 'package.json'
       - 'vite.config.ts'
       - '.github/workflows/native-builds.yml'
@@ -29,6 +30,8 @@ jobs:
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
       - name: Install JavaScript dependencies
         run: npm install
+      - name: Generate application icons
+        run: npm run icons
       - name: Build desktop bundle
         run: npm run desktop:build
 
@@ -56,8 +59,12 @@ jobs:
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
       - name: Install JavaScript dependencies
         run: npm install
+      - name: Generate desktop icon prerequisites
+        run: npm run icons
       - name: Initialize Android project
         run: npm run android:init -- --ci
+      - name: Generate Android application icons
+        run: npm run icons
       - name: Build unsigned development APK
         run: npm run android:build
       - name: Upload APK
