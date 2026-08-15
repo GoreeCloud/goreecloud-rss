@@ -19,6 +19,8 @@
     "android:build": "tauri android build --apk --debug --ci"
   },
   "dependencies": {
+    "@tauri-apps/api": "2.11.1",
+    "@tauri-apps/plugin-http": "2.5.9",
     "lucide-react": "1.28.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
