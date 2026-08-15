@@ -2,7 +2,7 @@
 
 ## Role
 
-GoreeCloud Feed is a client application. FreshRSS remains the authoritative aggregator, subscription store, read-state store, favorite-state store, and multi-user backend.
+GoreeCloud Feed is a client application. FreshRSS remains the authoritative aggregator, subscription store, category store, read-state store, favorite-state store, and multi-user backend.
 
 The repository does not fork or replace FreshRSS. It supplies a GoreeCloud-controlled presentation and client layer.
 
@@ -16,7 +16,7 @@ One React + TypeScript + Vite interface is used for three targets:
 
 Tauri is intentionally used for both desktop and Android so GoreeCloud does not maintain separate desktop and mobile presentation codebases without a product requirement.
 
-The application shell owns session, timeline, search, navigation, appearance, and synchronization state. Focused UI behaviors that have their own interaction lifecycle, such as the add-feed modal, are isolated into dedicated components rather than embedded in the shell. Preview mode is explicitly non-mutating.
+The application shell owns session, timeline, search, category-view, navigation, appearance, and synchronization state. Focused UI behaviors that have their own interaction lifecycle, such as the add-feed modal, are isolated into dedicated components rather than embedded in the shell. Preview mode is explicitly non-mutating.
 
 ## API boundary
 
@@ -34,9 +34,17 @@ Every person authenticates with that person's own FreshRSS username and dedicate
 
 FreshRSS remains responsible for server-side user separation. The client must never treat private network connectivity as application authorization.
 
+## Subscription and category model
+
+FreshRSS remains authoritative for subscription and category membership. The client loads the current subscription list, preserves each article's FreshRSS origin stream identity, and derives category views from those two authoritative API surfaces in memory.
+
+The category view is therefore a presentation filter rather than a second category database or synchronization authority. Selecting a category filters the already loaded Home, Unread, or Saved timeline to articles whose origin feed belongs to that FreshRSS category. Selecting a primary timeline clears the category view.
+
+After an add-feed mutation, the client forces a FreshRSS subscription reload instead of reusing its previous subscription array. This keeps source counts and category navigation synchronized with the backend immediately after a subscription change.
+
 ## Local state
 
-The current development milestone deliberately keeps the API credential and authentication token in memory only. It does not persist reusable credentials in browser local storage. Sign-out clears the active account, loaded timeline/subscription state, search state, notices, navigation state, and open add-feed state.
+The current development milestone deliberately keeps the API credential and authentication token in memory only. It does not persist reusable credentials in browser local storage. Sign-out clears the active account, loaded timeline/subscription state, category/search state, notices, navigation state, and open add-feed state.
 
 Later desktop/Android persistence must use a platform-appropriate secure credential store. Offline article caching may be added, but cached data is a replica and never becomes authoritative over FreshRSS.
 
@@ -58,11 +66,12 @@ The current foundation implements or scaffolds:
 
 - ClientLogin authentication.
 - Subscription discovery.
+- FreshRSS-backed category filtering over loaded timeline items.
 - Home, unread, and saved/starred timelines.
 - Article search over the loaded timeline.
 - Read/unread mutation.
 - Save/unsave mutation.
-- Feed subscription creation.
+- Feed subscription creation with authoritative subscription refresh.
 - Explicitly non-mutating preview mode.
 - Social-style article cards.
 - Responsive desktop and mobile navigation.
@@ -73,4 +82,4 @@ The current foundation implements or scaffolds:
 - Deterministic JavaScript and Rust dependency graphs.
 - Pinned Rust native compiler validation.
 
-Future milestones should add robust pagination, sync checkpoints, secure account persistence on native targets only if persistent sign-in is required, offline reading with account-isolated caches, category filtering, feed management, OPML entry points, richer content/media rendering, notification policy, release signing, and additional desktop package formats when justified.
+Future milestones should add robust pagination, sync checkpoints, secure account persistence on native targets only if persistent sign-in is required, offline reading with account-isolated caches, broader feed/category management, OPML entry points, richer content/media rendering, notification policy, release signing, and additional desktop package formats when justified.
