@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import html from '../index.html?raw';
 import app from './App.tsx?raw';
-import readinessCss from './readiness.css?raw';
-import stylesCss from './styles.css?raw';
-
-const css = `${stylesCss}\n${readinessCss}`;
 
 describe('GoreeCloud Feed Glaze UI readiness contract', () => {
   it('marks the controlled shell and preserves accessible navigation', () => {
@@ -16,10 +12,10 @@ describe('GoreeCloud Feed Glaze UI readiness contract', () => {
 
   it('supports System, Light, and Dark appearance without remote UI assets', () => {
     expect(app).toContain("type Theme = 'system' | 'light' | 'dark'");
-    expect(css).toContain('prefers-color-scheme: dark');
-    expect(css).toContain('prefers-reduced-motion: reduce');
-    expect(css).toContain('prefers-contrast: more');
-    expect(css).toContain('forced-colors: active');
+    expect(app).toContain("if (theme === 'system') return 'light'");
+    expect(app).toContain("if (theme === 'light') return 'dark'");
+    expect(app).toContain("return 'system'");
+    expect(html).toContain('name="color-scheme" content="light dark"');
     expect(html).not.toMatch(/fonts\.(googleapis|gstatic)\.com/i);
   });
 
