@@ -12,8 +12,9 @@ The application adapts useful social-feed interaction patterns without reproduci
 - Save, read-state, share, and open-original actions replace social-network reaction metrics.
 - Desktop uses left navigation, centered timeline, and a contextual right rail.
 - Mobile uses a compact top search surface and bottom navigation.
+- FreshRSS-backed categories are functional presentation filters rather than decorative labels or a separate category store.
 - The interface communicates that the timeline is user-chosen RSS, not algorithmic social ranking.
-- Controls are presented only when the current milestone provides functional behavior; unfinished Notifications, Settings, category filtering, or overflow actions are not exposed as inert interface elements.
+- Controls are presented only when the current milestone provides functional behavior; unfinished Notifications, Settings, or overflow actions are not exposed as inert interface elements.
 
 ## Shared Glaze requirements
 
@@ -25,6 +26,8 @@ The application adapts useful social-feed interaction patterns without reproduci
 - Visible keyboard focus.
 - Practical touch targets.
 - Accessible navigation state and a keyboard skip target.
+- Modal surfaces must contain keyboard focus while open, support Escape dismissal when safe, and restore focus to the invoking control when closed.
+- Busy form states must be communicated to assistive technology where the interaction blocks further submission.
 - Reduced-motion support.
 - Increased-contrast and forced-colors fallbacks.
 - Solid-surface fallback when backdrop filtering is unavailable.
@@ -46,7 +49,7 @@ For Feed this includes:
 
 ## Source-controlled contract
 
-`src/glaze-ui.test.ts` protects selected shell, accessibility, appearance, browser privacy, and placeholder-control invariants. `src/native-security.test.ts` protects the narrow native HTTP capability and Tauri network CSP.
+`src/glaze-ui.test.ts` protects selected shell, accessibility, appearance, browser privacy, functional category controls, FreshRSS subscription refresh, modal focus behavior, and placeholder-control invariants. `src/native-security.test.ts` protects the narrow native HTTP capability and Tauri network CSP.
 
 These tests make important release expectations reviewable and regression-resistant. They do not attempt to test subjective visual quality.
 
@@ -54,6 +57,6 @@ These tests make important release expectations reviewable and regression-resist
 
 Automated checks do not replace visual and interaction review.
 
-Before a Stable release, GoreeCloud Feed still requires representative acceptance across web, Linux desktop, and Android for applicable widths, System/Light/Dark appearance, keyboard and touch use, zoom/reflow, reduced motion, increased contrast, forced colors where supported, and other relevant accessibility behavior.
+Before a Stable release, GoreeCloud Feed still requires representative acceptance across web, Linux desktop, and Android for applicable widths, System/Light/Dark appearance, keyboard and touch use, modal focus behavior, zoom/reflow, reduced motion, increased contrast, forced colors where supported, and other relevant accessibility behavior.
 
-The current implementation remains a development foundation until those and the broader GoreeCloud production-readiness gates are satisfied.
+The current implementation remains a Stable candidate under validation until those and the broader GoreeCloud production-readiness gates are satisfied.
