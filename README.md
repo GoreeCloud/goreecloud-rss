@@ -4,7 +4,7 @@ GoreeCloud Feed is a GoreeCloud-owned RSS client that keeps **FreshRSS as the au
 
 ## Targets
 
-- Web / installable browser experience
+- Responsive web client
 - Linux desktop through Tauri 2
 - Android APK through Tauri 2
 
@@ -60,20 +60,31 @@ npm test
 npm run build
 ```
 
+Generate the native icon set from the repository's canonical GoreeCloud Feed SVG before a local Tauri build:
+
+```bash
+npm run icons
+```
+
 Desktop:
 
 ```bash
+npm run icons
 npm run desktop:dev
 npm run desktop:build
 ```
 
-Android requires the Tauri Android prerequisites and an initialized Android project:
+Android requires the Tauri Android prerequisites. Generate the desktop icon prerequisites, initialize the Android project, then regenerate icons so Tauri also writes the Android launcher resources:
 
 ```bash
+npm run icons
 npm run android:init
+npm run icons
 npm run android:dev
 npm run android:build
 ```
+
+The native CI workflow performs the same icon-generation sequence automatically.
 
 ## Security notes
 
