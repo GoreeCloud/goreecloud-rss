@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'src-tauri/**'
+      - 'scripts/**'
       - 'public/feed-mark.svg'
       - 'package.json'
       - 'package-lock.json'
@@ -40,17 +41,29 @@ jobs:
           "$HOME/.cargo/bin/rustc" +1.97.1 --version
       - name: Install locked JavaScript dependencies
         run: npm ci
+      - name: Validate release metadata
+        run: npm run release:check
       - name: Validate Rust lock consistency
         run: cargo +1.97.1 metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1 >/dev/null
       - name: Generate application icons
         run: npm run icons
       - name: Build desktop Debian package
         run: npm run desktop:build
+      - name: Generate Linux artifact provenance
+        run: |
+          mkdir -p release-evidence/linux
+          DEB="$(find src-tauri/target/release/bundle/deb -maxdepth 1 -type f -name '*.deb' -print -quit)"
+          test -n "$DEB"
+          sha256sum "$DEB" | sed 's#  .*/#  #' > release-evidence/linux/SHA256SUMS
+          printf 'source_revision=%s\nworkflow_run=%s\nplatform=linux-amd64-deb\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > release-evidence/linux/SOURCE_REVISION
+          npm run release:check > release-evidence/linux/RELEASE_METADATA_VALIDATION.txt
       - name: Upload Linux Debian package
         uses: actions/upload-artifact@v6
         with:
           name: goreecloud-feed-linux-amd64-deb
-          path: src-tauri/target/release/bundle/deb/*.deb
+          path: |
+            src-tauri/target/release/bundle/deb/*.deb
+            release-evidence/linux/*
           if-no-files-found: error
 
   android-apk:
@@ -81,6 +94,8 @@ jobs:
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
       - name: Install locked JavaScript dependencies
         run: npm ci
+      - name: Validate release metadata
+        run: npm run release:check
       - name: Validate Rust lock consistency
         run: cargo +1.97.1 metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1 >/dev/null
       - name: Generate desktop icon prerequisites
@@ -91,9 +106,18 @@ jobs:
         run: npm run icons
       - name: Build unsigned development APK
         run: npm run android:build
+      - name: Generate Android artifact provenance
+        run: |
+          mkdir -p release-evidence/android
+          find src-tauri/gen/android/app/build/outputs/apk -type f -name '*.apk' -print0 | sort -z | xargs -0 sha256sum | sed 's#  .*/#  #' > release-evidence/android/SHA256SUMS
+          test -s release-evidence/android/SHA256SUMS
+          printf 'source_revision=%s\nworkflow_run=%s\nplatform=android-debug-apk\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > release-evidence/android/SOURCE_REVISION
+          npm run release:check > release-evidence/android/RELEASE_METADATA_VALIDATION.txt
       - name: Upload APK
         uses: actions/upload-artifact@v6
         with:
           name: goreecloud-feed-android-debug
-          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          path: |
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+            release-evidence/android/*
           if-no-files-found: error
