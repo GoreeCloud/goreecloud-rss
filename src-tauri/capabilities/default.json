@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Minimal default capability set for the GoreeCloud Feed window.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

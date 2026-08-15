@@ -1,30 +1,94 @@
 # GoreeCloud Feed
 
-GoreeCloud Feed is a GoreeCloud-owned, open-source RSS client experience built around FreshRSS as the authoritative feed backend.
+GoreeCloud Feed is a GoreeCloud-owned RSS client that keeps **FreshRSS as the authoritative backend** while providing a new social-feed-style reading experience built with **Glaze UI**.
 
-The project targets:
+## Targets
 
-- Web / PWA
-- Linux desktop
-- Android APK
+- Web / installable browser experience
+- Linux desktop through Tauri 2
+- Android APK through Tauri 2
 
-The product direction is a social-feed-style reader inspired by the interaction clarity of modern social applications while remaining visually distinct through GoreeCloud Glaze UI.
+The same React + TypeScript interface is shared across targets so navigation, authentication behavior, FreshRSS synchronization, accessibility, and Glaze UI do not fragment into unrelated clients.
 
-## Current status
+## Product direction
 
-Foundation development has started. FreshRSS remains the backend and source of truth; this repository is the client layer.
+The interaction model takes inspiration from the readability and immediacy of modern social applications: a chronological home timeline, source identity, search, left navigation on desktop, a contextual right rail, compact mobile navigation, and quick actions on every article.
 
-## Core principles
+It deliberately does **not** add social-network engagement ranking, ads, tracking, follower metrics, or algorithmic recommendations. RSS subscriptions chosen by the user remain the timeline.
 
-- FreshRSS Google Reader-compatible API integration
-- Individual FreshRSS user identities; no shared application identity
-- Privacy by default and no analytics or tracking dependencies
-- Glaze UI across every controlled user-facing surface
-- Responsive desktop, tablet, and mobile layouts
-- One shared TypeScript/React presentation layer where practical
-- Reproducible web, desktop, and Android builds
-- Offline-friendly local cache without creating a second authoritative feed database
+## FreshRSS integration
+
+GoreeCloud Feed uses the FreshRSS Google Reader-compatible API. Each person signs in using an individual FreshRSS username and that user's dedicated API password.
+
+For the current GoreeCloud FreshRSS installation, the API shape is:
+
+```text
+https://<FreshRSS host>/api/greader.php
+```
+
+The default web-client field uses the relative path `/api/greader.php`, intended for a same-origin reverse-proxy deployment. Desktop and Android can use a full HTTPS API address.
+
+## Current foundation
+
+Implemented or scaffolded in the first development milestone:
+
+- Glaze UI social timeline shell
+- System/light/dark appearance
+- Desktop three-region layout
+- Responsive Android/mobile layout with bottom navigation
+- FreshRSS ClientLogin authentication
+- Subscription loading
+- Home, unread, and saved timelines
+- Timeline search
+- Save/unsave article mutation
+- Read/unread article mutation
+- Add-feed mutation
+- Demo timeline for UI development without credentials
+- Plain-text handling of untrusted RSS summary HTML
+- HTTP/HTTPS external-link validation
+- Web content-security policy
+- Minimal Tauri native permissions
+- Web unit/build CI
+- Linux desktop and Android APK build workflows
 
 ## Development
 
-Implementation work is developed on feature branches and reviewed through pull requests before merge.
+```bash
+npm install
+npm run dev
+npm test
+npm run build
+```
+
+Desktop:
+
+```bash
+npm run desktop:dev
+npm run desktop:build
+```
+
+Android requires the Tauri Android prerequisites and an initialized Android project:
+
+```bash
+npm run android:init
+npm run android:dev
+npm run android:build
+```
+
+## Security notes
+
+The current development milestone keeps the FreshRSS API password and returned authentication token in memory only. They are not persisted to browser local storage. Native secure credential persistence is intentionally deferred until a reviewed platform-secure storage implementation is added.
+
+Raw RSS HTML is not injected into the interface. Article summaries are reduced to plain text in this milestone.
+
+See [docs/SECURITY.md](docs/SECURITY.md) for the full trust-boundary notes.
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Glaze UI contract](docs/GLAZE-UI.md)
+- [Security model](docs/SECURITY.md)
+
+## License
+
+MIT. FreshRSS is a separate upstream service and retains its own license and project identity.
