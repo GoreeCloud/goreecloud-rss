@@ -10,6 +10,8 @@ FreshRSS remains authoritative for user accounts, subscriptions, categories, art
 
 The current development package is on the `0.1.0` Stable line. During development, `package.json` may use a `-dev.N` qualifier while Tauri and Cargo retain the target Stable base version. `npm run release:check` verifies that these identities remain aligned and that the approved product name, application identifier, private npm-package status, and MIT license have not drifted.
 
+A release candidate should move the npm package identity from `-dev.N` to an approved `-rc.N` qualifier only as part of a controlled candidate cut. The final Stable release removes the prerelease qualifier so npm, Tauri, and Cargo identify the same `MAJOR.MINOR.PATCH` release.
+
 Before a release candidate or Stable release is cut, update version metadata deliberately and regenerate affected lock metadata with the approved package managers. Do not hand-edit deterministic lockfiles merely to make version checks pass.
 
 ## Automated candidate evidence
