@@ -63,7 +63,7 @@ export default function App() {
     else root.dataset.theme = theme;
   }, [theme]);
 
-  async function refresh(nextFilter = filter) {
+  async function refresh(nextFilter = filter, reloadSubscriptions = false) {
     if (demo) {
       setArticles(demoArticles.filter((article) => nextFilter === 'home' || (nextFilter === 'unread' ? article.unread : article.starred)));
       setSubscriptions(demoSubscriptions);
@@ -76,7 +76,7 @@ export default function App() {
     try {
       const [nextArticles, nextSubscriptions] = await Promise.all([
         getTimeline(account, nextFilter),
-        subscriptions.length ? Promise.resolve(subscriptions) : getSubscriptions(account),
+        !reloadSubscriptions && subscriptions.length ? Promise.resolve(subscriptions) : getSubscriptions(account),
       ]);
       setArticles(nextArticles);
       setSubscriptions(nextSubscriptions);
@@ -268,7 +268,7 @@ export default function App() {
           account={account}
           demo={demo}
           onClose={() => setShowAddFeed(false)}
-          onAdded={() => void refresh()}
+          onAdded={() => void refresh(filter, true)}
         />
       )}
     </div>
