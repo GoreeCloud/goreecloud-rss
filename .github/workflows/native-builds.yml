@@ -12,6 +12,10 @@ on:
       - 'vite.config.ts'
       - '.github/workflows/native-builds.yml'
 
+concurrency:
+  group: native-builds-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
