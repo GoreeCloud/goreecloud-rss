@@ -23,19 +23,24 @@ export function AddFeedDialog({ account, demo, onClose, onAdded }: AddFeedDialog
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const dialogRef = useRef<HTMLElement>(null);
+  const busyRef = useRef(busy);
+  const onCloseRef = useRef(onClose);
+
+  busyRef.current = busy;
+  onCloseRef.current = onClose;
 
   // A modal must keep keyboard focus inside itself and return focus to the
-  // invoking control when it closes. This preserves predictable navigation
-  // across browser, Linux WebView, and Android keyboard/accessibility input.
+  // invoking control when it closes. The trap is installed once per modal
+  // lifetime so rerenders cannot replace the original focus-return target.
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(focusableSelector);
     firstFocusable?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !busy) {
+      if (event.key === 'Escape' && !busyRef.current) {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -63,7 +68,7 @@ export function AddFeedDialog({ account, demo, onClose, onAdded }: AddFeedDialog
       document.removeEventListener('keydown', onKeyDown);
       previousFocus?.focus();
     };
-  }, [busy, onClose]);
+  }, []);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
