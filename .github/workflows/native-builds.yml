@@ -32,8 +32,14 @@ jobs:
         run: npm install
       - name: Generate application icons
         run: npm run icons
-      - name: Build desktop bundle
+      - name: Build desktop Debian package
         run: npm run desktop:build
+      - name: Upload Linux Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: goreecloud-feed-linux-amd64-deb
+          path: src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: error
 
   android-apk:
     runs-on: ubuntu-24.04
