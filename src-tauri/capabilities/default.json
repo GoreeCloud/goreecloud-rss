@@ -1,7 +1,17 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Minimal default capability set for the GoreeCloud Feed window.",
+  "description": "Minimal capabilities for GoreeCloud Feed with HTTP restricted to the approved FreshRSS backend and localhost development.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://rss.goreecloud.com/*" },
+        { "url": "http://localhost:*/*" },
+        { "url": "http://127.0.0.1:*/*" }
+      ]
+    }
+  ]
 }
