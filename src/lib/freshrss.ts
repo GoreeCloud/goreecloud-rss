@@ -167,6 +167,7 @@ export async function getTimeline(account: FeedAccount, filter: TimelineFilter, 
 
     return {
       id: String(item.id ?? `goreecloud-feed-item-${index}`),
+      feedId: typeof origin.streamId === 'string' && origin.streamId ? origin.streamId : undefined,
       title: typeof item.title === 'string' && item.title.trim() ? item.title : 'Untitled article',
       source: typeof origin.title === 'string' && origin.title.trim() ? origin.title : 'RSS source',
       sourceUrl: safeExternalUrl(origin.htmlUrl),
