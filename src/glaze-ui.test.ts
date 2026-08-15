@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import html from '../index.html?raw';
 import app from './App.tsx?raw';
 import addFeedDialog from './components/AddFeedDialog.tsx?raw';
+import loginPanel from './components/LoginPanel.tsx?raw';
 
 describe('GoreeCloud Feed Glaze UI readiness contract', () => {
   it('marks the controlled shell and preserves accessible navigation', () => {
@@ -45,8 +46,16 @@ describe('GoreeCloud Feed Glaze UI readiness contract', () => {
     expect(addFeedDialog).toContain('aria-modal="true"');
     expect(addFeedDialog).toContain("event.key !== 'Tab'");
     expect(addFeedDialog).toContain('previousFocus?.focus()');
-    expect(addFeedDialog).toContain('dialogRef.current?.querySelectorAll<HTMLElement>(focusableSelector)');
+    expect(addFeedDialog).toContain('busyRef.current');
+    expect(addFeedDialog).toContain('onCloseRef.current()');
     expect(addFeedDialog).toContain('aria-busy={busy}');
+  });
+
+  it('exposes authentication help and busy state to assistive technology', () => {
+    expect(loginPanel).toContain('aria-describedby="api-address-help"');
+    expect(loginPanel).toContain('id="api-address-help"');
+    expect(loginPanel).toContain('aria-busy={busy}');
+    expect(loginPanel).toContain('disabled={busy}>Preview Glaze UI without signing in');
   });
 
   it('does not expose placeholder notifications or settings controls', () => {
