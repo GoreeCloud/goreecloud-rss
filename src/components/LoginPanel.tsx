@@ -9,8 +9,14 @@ interface LoginPanelProps {
   onUseDemo: () => void;
 }
 
+function initialApiAddress(): string {
+  const developmentOverride = import.meta.env.DEV ? import.meta.env.VITE_FRESHRSS_API_BASE?.trim() : '';
+  if (developmentOverride) return developmentOverride;
+  return isNativeClient() ? 'https://rss.goreecloud.com/api/greader.php' : '/api/greader.php';
+}
+
 export function LoginPanel({ onAuthenticated, onUseDemo }: LoginPanelProps) {
-  const [server, setServer] = useState(() => isNativeClient() ? 'https://rss.goreecloud.com/api/greader.php' : '/api/greader.php');
+  const [server] = useState(initialApiAddress);
   const [username, setUsername] = useState('');
   const [apiPassword, setApiPassword] = useState('');
   const [error, setError] = useState('');
@@ -42,7 +48,8 @@ export function LoginPanel({ onAuthenticated, onUseDemo }: LoginPanelProps) {
         <form onSubmit={submit} className="login-form">
           <label>
             <span>FreshRSS API address</span>
-            <input value={server} onChange={(event) => setServer(event.target.value)} autoCapitalize="none" spellCheck={false} required />
+            <input value={server} readOnly aria-readonly="true" autoCapitalize="none" spellCheck={false} />
+            <small className="field-help">Production API routing is fixed by the GoreeCloud client security boundary. Local development may use VITE_FRESHRSS_API_BASE.</small>
           </label>
           <label>
             <span>Username</span>
