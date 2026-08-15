@@ -8,6 +8,7 @@ on:
       - 'src-tauri/**'
       - 'public/feed-mark.svg'
       - 'package.json'
+      - 'package-lock.json'
       - 'vite.config.ts'
       - '.github/workflows/native-builds.yml'
 
@@ -22,25 +23,22 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-          package-manager-cache: false
+          cache: npm
+          cache-dependency-path: package-lock.json
       - name: Install Linux prerequisites
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
       - name: Install Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-      - name: Install JavaScript dependencies
-        run: npm install
+      - name: Install locked JavaScript dependencies
+        run: npm ci
+      - name: Validate Rust lock consistency
+        run: cargo metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1 >/dev/null
       - name: Generate application icons
         run: npm run icons
       - name: Build desktop Debian package
         run: npm run desktop:build
-      - name: Upload generated Cargo lock evidence
-        uses: actions/upload-artifact@v6
-        with:
-          name: goreecloud-feed-cargo-lock
-          path: src-tauri/Cargo.lock
-          if-no-files-found: error
       - name: Upload Linux Debian package
         uses: actions/upload-artifact@v6
         with:
@@ -55,7 +53,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-          package-manager-cache: false
+          cache: npm
+          cache-dependency-path: package-lock.json
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -71,8 +70,10 @@ jobs:
           test -n "$NDK_VERSION"
           test -f "$ANDROID_HOME/ndk/$NDK_VERSION/source.properties"
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
-      - name: Install JavaScript dependencies
-        run: npm install
+      - name: Install locked JavaScript dependencies
+        run: npm ci
+      - name: Validate Rust lock consistency
+        run: cargo metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1 >/dev/null
       - name: Generate desktop icon prerequisites
         run: npm run icons
       - name: Initialize Android project
