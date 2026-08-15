@@ -6,26 +6,40 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   web:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-node@v6
         with:
           node-version: 22
           package-manager-cache: false
-      - name: Install dependencies
-        run: npm install --ignore-scripts
+      - name: Install Rust for lock generation
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: Resolve dependency locks
+        run: |
+          npm install --ignore-scripts
+          cargo generate-lockfile --manifest-path src-tauri/Cargo.toml
       - name: Unit tests
         run: npm test
       - name: Type-check and build web client
         run: npm run build
-      - name: Upload generated npm lock evidence
-        uses: actions/upload-artifact@v6
-        with:
-          name: goreecloud-feed-npm-lock
-          path: package-lock.json
-          if-no-files-found: error
+      - name: Commit generated lockfiles on the pull-request branch
+        if: github.event_name == 'pull_request'
+        run: |
+          if git diff --quiet -- package-lock.json src-tauri/Cargo.lock && git ls-files --error-unmatch package-lock.json src-tauri/Cargo.lock >/dev/null 2>&1; then
+            echo "Dependency lockfiles are already committed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json src-tauri/Cargo.lock
+          git commit -m "chore: lock JavaScript and Rust dependencies"
+          git push origin "HEAD:${{ github.head_ref }}"
