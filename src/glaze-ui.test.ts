@@ -27,6 +27,13 @@ describe('GoreeCloud Feed Glaze UI readiness contract', () => {
     expect(html).toContain('name="referrer" content="same-origin"');
   });
 
+  it('keeps FreshRSS categories as functional accessible timeline controls', () => {
+    expect(app).toContain('className={`category-link ${category === name ? \'selected\' : \'\'}`}');
+    expect(app).toContain('aria-pressed={category === name}');
+    expect(app).toContain('categoryFeedIds.has(article.feedId)');
+    expect(app).not.toContain('className="category-summary"');
+  });
+
   it('does not expose placeholder notifications or settings controls', () => {
     expect(app).not.toContain('aria-label="Notifications"');
     expect(app).not.toContain('<span>Settings</span>');
