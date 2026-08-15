@@ -49,6 +49,7 @@ export default function App() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [filter, setFilter] = useState<TimelineFilter>('home');
+  const [category, setCategory] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
@@ -90,17 +91,29 @@ export default function App() {
     void refresh(filter);
   }, [account, demo, filter]);
 
+  const categoryFeedIds = useMemo(() => {
+    if (!category) return null;
+    return new Set(
+      subscriptions
+        .filter((subscription) => subscription.categories.includes(category))
+        .map((subscription) => subscription.id),
+    );
+  }, [category, subscriptions]);
+
   const visibleArticles = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return articles;
-    return articles.filter((article) => `${article.title} ${article.source} ${article.excerpt}`.toLowerCase().includes(needle));
-  }, [articles, query]);
+    return articles.filter((article) => {
+      if (categoryFeedIds && (!article.feedId || !categoryFeedIds.has(article.feedId))) return false;
+      if (!needle) return true;
+      return `${article.title} ${article.source} ${article.excerpt}`.toLowerCase().includes(needle);
+    });
+  }, [articles, categoryFeedIds, query]);
 
   const categoryCounts = useMemo(() => {
     const map = new Map<string, number>();
     subscriptions
       .flatMap((subscription) => subscription.categories)
-      .forEach((category) => map.set(category, (map.get(category) ?? 0) + 1));
+      .forEach((name) => map.set(name, (map.get(name) ?? 0) + 1));
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(0, 8);
   }, [subscriptions]);
 
@@ -136,6 +149,7 @@ export default function App() {
     setArticles([]);
     setSubscriptions([]);
     setFilter('home');
+    setCategory(null);
     setQuery('');
     setNotice('');
     setSidebarOpen(false);
@@ -144,12 +158,20 @@ export default function App() {
 
   function selectFilter(next: TimelineFilter) {
     setFilter(next);
+    setCategory(null);
+    setSidebarOpen(false);
+  }
+
+  function selectCategory(next: string) {
+    setCategory((current) => current === next ? null : next);
     setSidebarOpen(false);
   }
 
   if (!account && !demo) {
     return <LoginPanel onAuthenticated={setAccount} onUseDemo={() => setDemo(true)} />;
   }
+
+  const timelineLabel = category ?? navItems.find((item) => item.id === filter)?.label;
 
   return (
     <div className="app-shell" data-glaze-ui="feed">
@@ -182,7 +204,7 @@ export default function App() {
         <aside id="primary-sidebar" className={`left-rail ${sidebarOpen ? 'open' : ''}`}>
           <nav aria-label="Primary">
             {navItems.map(({ id, label, icon: Icon }) => (
-              <button key={id} className={filter === id ? 'selected' : ''} onClick={() => selectFilter(id)} aria-current={filter === id ? 'page' : undefined}>
+              <button key={id} className={!category && filter === id ? 'selected' : ''} onClick={() => selectFilter(id)} aria-current={!category && filter === id ? 'page' : undefined}>
                 <Icon /><span>{label}</span>
               </button>
             ))}
@@ -191,7 +213,16 @@ export default function App() {
           <section className="rail-section desktop-only" aria-labelledby="categories-heading">
             <h2 id="categories-heading">Categories</h2>
             {categoryCounts.length
-              ? categoryCounts.map(([name, count]) => <div key={name} className="category-summary"><span>{name}</span><small>{count}</small></div>)
+              ? categoryCounts.map(([name, count]) => (
+                  <button
+                    key={name}
+                    className={`category-link ${category === name ? 'selected' : ''}`}
+                    onClick={() => selectCategory(name)}
+                    aria-pressed={category === name}
+                  >
+                    <span>{name}</span><small>{count}</small>
+                  </button>
+                ))
               : <p>No categories yet.</p>}
           </section>
           <div className="rail-footer">
@@ -202,7 +233,7 @@ export default function App() {
 
         <main id="timeline" tabIndex={-1}>
           <section className="timeline-heading">
-            <div><p className="eyebrow">Your timeline</p><h1>{navItems.find((item) => item.id === filter)?.label}</h1></div>
+            <div><p className="eyebrow">Your timeline</p><h1>{timelineLabel}</h1></div>
             <span>{visibleArticles.length} posts</span>
           </section>
           {notice && <div className="notice-banner" role="status">{notice}</div>}
@@ -228,7 +259,7 @@ export default function App() {
       </div>
 
       <nav className="mobile-nav mobile-only" aria-label="Mobile primary">
-        {navItems.map(({ id, label, icon: Icon }) => <button key={id} className={filter === id ? 'selected' : ''} onClick={() => selectFilter(id)} aria-current={filter === id ? 'page' : undefined}><Icon /><span>{label}</span></button>)}
+        {navItems.map(({ id, label, icon: Icon }) => <button key={id} className={!category && filter === id ? 'selected' : ''} onClick={() => selectFilter(id)} aria-current={!category && filter === id ? 'page' : undefined}><Icon /><span>{label}</span></button>)}
         <button onClick={() => setShowAddFeed(true)}><Plus /><span>Add</span></button>
       </nav>
 
