@@ -14,7 +14,16 @@ describe('FreshRSS connection helpers', () => {
     expect(normalizeApiBase('http://localhost:8080/api/greader.php/')).toBe('http://localhost:8080/api/greader.php');
   });
 
+  it('rejects malformed and credential-bearing API addresses', () => {
+    expect(() => normalizeApiBase('not a URL')).toThrow('Enter a valid FreshRSS API address.');
+    expect(() => normalizeApiBase('https://user:secret@rss.example.test/api/greader.php')).toThrow('Do not place credentials');
+  });
+
   it('extracts the ClientLogin Auth token', () => {
     expect(parseClientLogin('SID=demo/abc\nAuth=demo/abc\n')).toBe('demo/abc');
+  });
+
+  it('rejects a ClientLogin response without an auth token', () => {
+    expect(() => parseClientLogin('SID=demo/abc\n')).toThrow(FreshRssError);
   });
 });
