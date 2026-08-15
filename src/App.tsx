@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Bookmark,
   CircleUserRound,
@@ -14,9 +14,10 @@ import {
   Sparkles,
   Sun,
 } from 'lucide-react';
+import { AddFeedDialog } from './components/AddFeedDialog';
 import { ArticleCard } from './components/ArticleCard';
 import { LoginPanel } from './components/LoginPanel';
-import { addSubscription, getSubscriptions, getTimeline, setRead, setStarred } from './lib/freshrss';
+import { getSubscriptions, getTimeline, setRead, setStarred } from './lib/freshrss';
 import { demoArticles, demoSubscriptions } from './lib/demo';
 import type { Article, FeedAccount, Subscription, TimelineFilter } from './types';
 import './styles.css';
@@ -68,6 +69,7 @@ export default function App() {
       return;
     }
     if (!account) return;
+
     setLoading(true);
     setNotice('');
     try {
@@ -96,7 +98,9 @@ export default function App() {
 
   const categoryCounts = useMemo(() => {
     const map = new Map<string, number>();
-    subscriptions.flatMap((subscription) => subscription.categories).forEach((category) => map.set(category, (map.get(category) ?? 0) + 1));
+    subscriptions
+      .flatMap((subscription) => subscription.categories)
+      .forEach((category) => map.set(category, (map.get(category) ?? 0) + 1));
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(0, 8);
   }, [subscriptions]);
 
@@ -104,6 +108,7 @@ export default function App() {
     const next = !article.starred;
     setArticles((current) => current.map((item) => item.id === article.id ? { ...item, starred: next } : item));
     if (!account || demo) return;
+
     try {
       await setStarred(account, article.id, next);
     } catch (cause) {
@@ -116,6 +121,7 @@ export default function App() {
     const nextUnread = !article.unread;
     setArticles((current) => current.map((item) => item.id === article.id ? { ...item, unread: nextUnread } : item));
     if (!account || demo) return;
+
     try {
       await setRead(account, article.id, !nextUnread);
     } catch (cause) {
@@ -133,15 +139,16 @@ export default function App() {
     setQuery('');
     setNotice('');
     setSidebarOpen(false);
-  }
-
-  if (!account && !demo) {
-    return <LoginPanel onAuthenticated={setAccount} onUseDemo={() => setDemo(true)} />;
+    setShowAddFeed(false);
   }
 
   function selectFilter(next: TimelineFilter) {
     setFilter(next);
     setSidebarOpen(false);
+  }
+
+  if (!account && !demo) {
+    return <LoginPanel onAuthenticated={setAccount} onUseDemo={() => setDemo(true)} />;
   }
 
   return (
@@ -183,7 +190,9 @@ export default function App() {
           <button className="add-feed-button" onClick={() => setShowAddFeed(true)}><Plus /><span>Add feed</span></button>
           <section className="rail-section desktop-only" aria-labelledby="categories-heading">
             <h2 id="categories-heading">Categories</h2>
-            {categoryCounts.length ? categoryCounts.map(([name, count]) => <div key={name} className="category-summary"><span>{name}</span><small>{count}</small></div>) : <p>No categories yet.</p>}
+            {categoryCounts.length
+              ? categoryCounts.map(([name, count]) => <div key={name} className="category-summary"><span>{name}</span><small>{count}</small></div>)
+              : <p>No categories yet.</p>}
           </section>
           <div className="rail-footer">
             <button onClick={() => setTheme((current) => nextTheme(current))} aria-label={`Appearance: ${theme}. Activate for next mode.`}><ThemeIcon theme={theme} /><span>Appearance: {theme}</span></button>
@@ -223,42 +232,14 @@ export default function App() {
         <button onClick={() => setShowAddFeed(true)}><Plus /><span>Add</span></button>
       </nav>
 
-      {showAddFeed && <AddFeedDialog account={account} demo={demo} onClose={() => setShowAddFeed(false)} onAdded={() => void refresh()} />}
-    </div>
-  );
-}
-
-function AddFeedDialog({ account, demo, onClose, onAdded }: { account: FeedAccount | null; demo: boolean; onClose: () => void; onAdded: () => void }) {
-  const [url, setUrl] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (demo) {
-      onClose();
-      return;
-    }
-    if (!account) return;
-    setBusy(true);
-    setError('');
-    try {
-      await addSubscription(account, url);
-      onAdded();
-      onClose();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to add the feed.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => event.currentTarget === event.target && onClose()}>
-      <section className="dialog glaze-panel" role="dialog" aria-modal="true" aria-labelledby="add-feed-title">
-        <p className="eyebrow">Follow the web</p><h2 id="add-feed-title">Add a feed</h2><p>Paste an RSS or Atom feed URL. GoreeCloud Feed will ask FreshRSS to subscribe for your account.</p>
-        <form onSubmit={submit}><label><span>Feed URL</span><input type="url" placeholder="https://example.com/feed.xml" value={url} onChange={(event) => setUrl(event.target.value)} required autoFocus /></label>{error && <p className="error-banner" role="alert">{error}</p>}<div className="dialog-actions"><button type="button" className="secondary-button" onClick={onClose}>Cancel</button><button className="primary-button" disabled={busy}>{busy ? 'Adding…' : 'Add feed'}</button></div></form>
-      </section>
+      {showAddFeed && (
+        <AddFeedDialog
+          account={account}
+          demo={demo}
+          onClose={() => setShowAddFeed(false)}
+          onAdded={() => void refresh()}
+        />
+      )}
     </div>
   );
 }
