@@ -28,6 +28,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+.field-help {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.login-form input[readonly] {
+  color: var(--muted);
+  cursor: default;
+}
+
 .rail-footer {
   display: grid;
 }
