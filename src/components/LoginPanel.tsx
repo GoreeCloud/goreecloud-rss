@@ -45,15 +45,22 @@ export function LoginPanel({ onAuthenticated, onUseDemo }: LoginPanelProps) {
         <h1 id="login-title">Feed</h1>
         <p className="login-lede">Your FreshRSS subscriptions, reimagined as a calm social-style timeline.</p>
 
-        <form onSubmit={submit} className="login-form">
+        <form onSubmit={submit} className="login-form" aria-busy={busy}>
           <label>
             <span>FreshRSS API address</span>
-            <input value={server} readOnly aria-readonly="true" autoCapitalize="none" spellCheck={false} />
-            <small className="field-help">Production API routing is fixed by the GoreeCloud client security boundary. Local development may use VITE_FRESHRSS_API_BASE.</small>
+            <input
+              value={server}
+              readOnly
+              aria-readonly="true"
+              aria-describedby="api-address-help"
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+            <small id="api-address-help" className="field-help">Production API routing is fixed by the GoreeCloud client security boundary. Local development may use VITE_FRESHRSS_API_BASE.</small>
           </label>
           <label>
             <span>Username</span>
-            <input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" required />
+            <input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" autoCapitalize="none" spellCheck={false} required />
           </label>
           <label>
             <span>API password</span>
@@ -63,7 +70,7 @@ export function LoginPanel({ onAuthenticated, onUseDemo }: LoginPanelProps) {
           <button className="primary-button" disabled={busy}>{busy ? 'Connecting…' : 'Connect to FreshRSS'}</button>
         </form>
 
-        <button className="text-button" type="button" onClick={onUseDemo}>Preview Glaze UI without signing in</button>
+        <button className="text-button" type="button" onClick={onUseDemo} disabled={busy}>Preview Glaze UI without signing in</button>
 
         <div className="privacy-note">
           <ShieldCheck aria-hidden="true" />
