@@ -9,6 +9,7 @@ on:
       - 'public/feed-mark.svg'
       - 'package.json'
       - 'package-lock.json'
+      - 'rust-toolchain.toml'
       - 'vite.config.ts'
       - '.github/workflows/native-builds.yml'
 
@@ -31,14 +32,16 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: Install Linux prerequisites
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
-      - name: Install Rust
+      - name: Install pinned Rust toolchain
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/rustup" toolchain install 1.97.1 --profile minimal
+          "$HOME/.cargo/bin/rustc" +1.97.1 --version
       - name: Install locked JavaScript dependencies
         run: npm ci
       - name: Validate Rust lock consistency
-        run: cargo metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1 >/dev/null
+        run: cargo +1.97.1 metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1 >/dev/null
       - name: Generate application icons
         run: npm run icons
       - name: Build desktop Debian package
@@ -63,11 +66,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Install Rust with Android targets
+      - name: Install pinned Rust toolchain with Android targets
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          "$HOME/.cargo/bin/rustup" target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+          "$HOME/.cargo/bin/rustup" toolchain install 1.97.1 --profile minimal
+          "$HOME/.cargo/bin/rustup" target add --toolchain 1.97.1 aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+          "$HOME/.cargo/bin/rustc" +1.97.1 --version
       - name: Configure Android NDK
         run: |
           NDK_VERSION="$(find "$ANDROID_HOME/ndk" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -V | tail -n 1)"
@@ -77,7 +82,7 @@ jobs:
       - name: Install locked JavaScript dependencies
         run: npm ci
       - name: Validate Rust lock consistency
-        run: cargo metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1 >/dev/null
+        run: cargo +1.97.1 metadata --manifest-path src-tauri/Cargo.toml --locked --format-version 1 >/dev/null
       - name: Generate desktop icon prerequisites
         run: npm run icons
       - name: Initialize Android project
