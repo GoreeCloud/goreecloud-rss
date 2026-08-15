@@ -15,6 +15,7 @@ export interface Subscription {
 
 export interface Article {
   id: string;
+  feedId?: string;
   title: string;
   source: string;
   sourceUrl?: string;
