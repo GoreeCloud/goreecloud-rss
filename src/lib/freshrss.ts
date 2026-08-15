@@ -13,6 +13,8 @@ export class FreshRssError extends Error {
 
 export function normalizeApiBase(input: string): string {
   const trimmed = input.trim();
+  if (!trimmed) throw new FreshRssError('Enter a FreshRSS API address.');
+
   if (trimmed.startsWith('/')) {
     if (isNativeClient()) {
       throw new FreshRssError('Desktop and Android require the full HTTPS FreshRSS API address.');
@@ -20,11 +22,21 @@ export function normalizeApiBase(input: string): string {
     return trimmed.replace(/\/$/, '');
   }
 
-  const url = new URL(trimmed);
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    throw new FreshRssError('Enter a valid FreshRSS API address.');
+  }
+
   const localhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
   if (url.protocol !== 'https:' && !(localhost && url.protocol === 'http:')) {
     throw new FreshRssError('Use HTTPS for FreshRSS API connections. HTTP is allowed only for local development.');
   }
+  if (url.username || url.password) {
+    throw new FreshRssError('Do not place credentials in the FreshRSS API address.');
+  }
+
   url.hash = '';
   url.search = '';
   return url.toString().replace(/\/$/, '');
@@ -66,7 +78,11 @@ async function request(account: FeedAccount, path: string, init: RequestInit = {
 
 export async function login(apiBaseInput: string, username: string, apiPassword: string): Promise<FeedAccount> {
   const apiBase = normalizeApiBase(apiBaseInput);
-  const body = new URLSearchParams({ Email: username.trim(), Passwd: apiPassword });
+  const normalizedUsername = username.trim();
+  if (!normalizedUsername) throw new FreshRssError('Enter your FreshRSS username.');
+  if (!apiPassword) throw new FreshRssError('Enter your FreshRSS API password.');
+
+  const body = new URLSearchParams({ Email: normalizedUsername, Passwd: apiPassword });
   const response = await appFetch(endpoint(apiBase, '/accounts/ClientLogin'), {
     method: 'POST',
     cache: 'no-store',
@@ -79,7 +95,7 @@ export async function login(apiBaseInput: string, username: string, apiPassword:
     throw new FreshRssError('FreshRSS rejected the API credentials.', response.status);
   }
 
-  return { apiBase, username: username.trim(), authToken: parseClientLogin(await response.text()) };
+  return { apiBase, username: normalizedUsername, authToken: parseClientLogin(await response.text()) };
 }
 
 export async function getSubscriptions(account: FeedAccount): Promise<Subscription[]> {
@@ -117,10 +133,21 @@ function safeExternalUrl(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   try {
     const url = new URL(value);
+    if (url.username || url.password) return undefined;
     return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : undefined;
   } catch {
     return undefined;
   }
+}
+
+function publishedAt(item: Record<string, unknown>): Date {
+  const timestampUsec = typeof item.timestampUsec === 'string' ? Number(item.timestampUsec) : Number.NaN;
+  if (Number.isFinite(timestampUsec) && timestampUsec > 0) return new Date(timestampUsec / 1000);
+
+  const crawlTimeMsec = Number(item.crawlTimeMsec);
+  if (Number.isFinite(crawlTimeMsec) && crawlTimeMsec > 0) return new Date(crawlTimeMsec);
+
+  return new Date();
 }
 
 export async function getTimeline(account: FeedAccount, filter: TimelineFilter, count = 40): Promise<Article[]> {
@@ -131,22 +158,21 @@ export async function getTimeline(account: FeedAccount, filter: TimelineFilter, 
   const response = await request(account, `/reader/api/0/stream/contents/${stream}?${query}`);
   const json = (await response.json()) as { items?: Array<Record<string, unknown>> };
 
-  return (json.items ?? []).map((item) => {
+  return (json.items ?? []).map((item, index) => {
     const categories = Array.isArray(item.categories) ? item.categories.filter((x): x is string => typeof x === 'string') : [];
     const origin = (item.origin ?? {}) as Record<string, unknown>;
     const summary = (item.summary ?? item.content ?? {}) as Record<string, unknown>;
     const alternate = Array.isArray(item.alternate) ? (item.alternate[0] as Record<string, unknown> | undefined) : undefined;
     const enclosure = Array.isArray(item.enclosure) ? (item.enclosure[0] as Record<string, unknown> | undefined) : undefined;
-    const publishedSec = typeof item.timestampUsec === 'string' ? Number(item.timestampUsec) / 1_000_000 : Number(item.crawlTimeMsec ?? Date.now()) / 1000;
 
     return {
-      id: String(item.id ?? crypto.randomUUID()),
+      id: String(item.id ?? `goreecloud-feed-item-${index}`),
       title: typeof item.title === 'string' && item.title.trim() ? item.title : 'Untitled article',
-      source: typeof origin.title === 'string' ? origin.title : 'RSS source',
+      source: typeof origin.title === 'string' && origin.title.trim() ? origin.title : 'RSS source',
       sourceUrl: safeExternalUrl(origin.htmlUrl),
       articleUrl: safeExternalUrl(alternate?.href),
       excerpt: plainText(typeof summary.content === 'string' ? summary.content : '').slice(0, 380),
-      publishedAt: new Date(publishedSec * 1000),
+      publishedAt: publishedAt(item),
       unread: !categories.some((category) => category.endsWith('/state/com.google/read')),
       starred: categories.some((category) => category.endsWith('/state/com.google/starred')),
       imageUrl: typeof enclosure?.type === 'string' && enclosure.type.startsWith('image/') ? safeExternalUrl(enclosure.href) : undefined,
@@ -183,8 +209,15 @@ export async function setRead(account: FeedAccount, articleId: string, read: boo
 }
 
 export async function addSubscription(account: FeedAccount, feedUrl: string): Promise<void> {
-  const parsed = new URL(feedUrl.trim());
+  let parsed: URL;
+  try {
+    parsed = new URL(feedUrl.trim());
+  } catch {
+    throw new FreshRssError('Enter a valid RSS or Atom feed URL.');
+  }
   if (!['https:', 'http:'].includes(parsed.protocol)) throw new FreshRssError('Feed URL must use HTTP or HTTPS.');
+  if (parsed.username || parsed.password) throw new FreshRssError('Do not place credentials in a feed URL.');
+
   const token = await getEditToken(account);
   const body = new URLSearchParams({ ac: 'subscribe', s: `feed/${parsed.toString()}`, T: token });
   await request(account, '/reader/api/0/subscription/edit', {
