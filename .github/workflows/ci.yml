@@ -23,3 +23,9 @@ jobs:
         run: npm test
       - name: Type-check and build web client
         run: npm run build
+      - name: Upload generated npm lock evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: goreecloud-feed-npm-lock
+          path: package-lock.json
+          if-no-files-found: error
