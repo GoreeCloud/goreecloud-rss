@@ -1,17 +1,16 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
-  Bell,
   Bookmark,
-  ChevronDown,
   CircleUserRound,
   Home,
+  LogOut,
   Menu,
+  Monitor,
   Moon,
   Plus,
   RefreshCw,
   Rss,
   Search,
-  Settings,
   Sparkles,
   Sun,
 } from 'lucide-react';
@@ -21,6 +20,7 @@ import { addSubscription, getSubscriptions, getTimeline, setRead, setStarred } f
 import { demoArticles, demoSubscriptions } from './lib/demo';
 import type { Article, FeedAccount, Subscription, TimelineFilter } from './types';
 import './styles.css';
+import './readiness.css';
 
 type Theme = 'system' | 'light' | 'dark';
 
@@ -29,6 +29,18 @@ const navItems: Array<{ id: TimelineFilter; label: string; icon: typeof Home }> 
   { id: 'unread', label: 'Unread', icon: Sparkles },
   { id: 'starred', label: 'Saved', icon: Bookmark },
 ];
+
+function nextTheme(theme: Theme): Theme {
+  if (theme === 'system') return 'light';
+  if (theme === 'light') return 'dark';
+  return 'system';
+}
+
+function ThemeIcon({ theme }: { theme: Theme }) {
+  if (theme === 'light') return <Sun />;
+  if (theme === 'dark') return <Moon />;
+  return <Monitor />;
+}
 
 export default function App() {
   const [account, setAccount] = useState<FeedAccount | null>(null);
@@ -112,6 +124,17 @@ export default function App() {
     }
   }
 
+  function signOut() {
+    setAccount(null);
+    setDemo(false);
+    setArticles([]);
+    setSubscriptions([]);
+    setFilter('home');
+    setQuery('');
+    setNotice('');
+    setSidebarOpen(false);
+  }
+
   if (!account && !demo) {
     return <LoginPanel onAuthenticated={setAccount} onUseDemo={() => setDemo(true)} />;
   }
@@ -122,10 +145,16 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-glaze-ui="feed">
       <a className="skip-link" href="#timeline">Skip to timeline</a>
       <header className="topbar glaze-panel">
-        <button className="icon-button mobile-only" onClick={() => setSidebarOpen((open) => !open)} aria-label="Open navigation"><Menu /></button>
+        <button
+          className="icon-button mobile-only"
+          onClick={() => setSidebarOpen((open) => !open)}
+          aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+          aria-expanded={sidebarOpen}
+          aria-controls="primary-sidebar"
+        ><Menu /></button>
         <div className="brand-lockup">
           <div className="brand-mark small"><Rss /></div>
           <div><strong>GoreeCloud</strong><span>Feed</span></div>
@@ -136,29 +165,29 @@ export default function App() {
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search your feeds" />
         </label>
         <div className="topbar-actions">
-          <button className="icon-button" onClick={() => void refresh()} aria-label="Refresh timeline"><RefreshCw className={loading ? 'spin' : ''} /></button>
-          <button className="icon-button desktop-only" aria-label="Notifications"><Bell /></button>
-          <button className="account-pill"><CircleUserRound /><span>{demo ? 'Preview' : account?.username}</span><ChevronDown /></button>
+          <button className="icon-button" onClick={() => void refresh()} aria-label="Refresh timeline" disabled={loading}><RefreshCw className={loading ? 'spin' : ''} /></button>
+          <div className="account-chip" aria-label={demo ? 'Preview session' : `Signed in as ${account?.username ?? ''}`}><CircleUserRound /><span>{demo ? 'Preview' : account?.username}</span></div>
+          <button className="icon-button" onClick={signOut} aria-label={demo ? 'Exit preview' : 'Sign out'}><LogOut /></button>
         </div>
       </header>
 
       <div className="layout">
-        <aside className={`left-rail ${sidebarOpen ? 'open' : ''}`}>
+        <aside id="primary-sidebar" className={`left-rail ${sidebarOpen ? 'open' : ''}`}>
           <nav aria-label="Primary">
             {navItems.map(({ id, label, icon: Icon }) => (
-              <button key={id} className={filter === id ? 'selected' : ''} onClick={() => selectFilter(id)}>
+              <button key={id} className={filter === id ? 'selected' : ''} onClick={() => selectFilter(id)} aria-current={filter === id ? 'page' : undefined}>
                 <Icon /><span>{label}</span>
               </button>
             ))}
           </nav>
           <button className="add-feed-button" onClick={() => setShowAddFeed(true)}><Plus /><span>Add feed</span></button>
-          <section className="rail-section desktop-only">
-            <h2>Categories</h2>
-            {categoryCounts.length ? categoryCounts.map(([name, count]) => <button key={name} className="category-link"><span>{name}</span><small>{count}</small></button>) : <p>No categories yet.</p>}
+          <section className="rail-section desktop-only" aria-labelledby="categories-heading">
+            <h2 id="categories-heading">Categories</h2>
+            {categoryCounts.length ? categoryCounts.map(([name, count]) => <div key={name} className="category-summary"><span>{name}</span><small>{count}</small></div>) : <p>No categories yet.</p>}
           </section>
-          <div className="rail-footer desktop-only">
-            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun /> : <Moon />}<span>Appearance</span></button>
-            <button><Settings /><span>Settings</span></button>
+          <div className="rail-footer">
+            <button onClick={() => setTheme((current) => nextTheme(current))} aria-label={`Appearance: ${theme}. Activate for next mode.`}><ThemeIcon theme={theme} /><span>Appearance: {theme}</span></button>
+            <button onClick={signOut}><LogOut /><span>{demo ? 'Exit preview' : 'Sign out'}</span></button>
           </div>
         </aside>
 
@@ -168,7 +197,7 @@ export default function App() {
             <span>{visibleArticles.length} posts</span>
           </section>
           {notice && <div className="notice-banner" role="status">{notice}</div>}
-          <div className="feed-stack">
+          <div className="feed-stack" aria-busy={loading}>
             {visibleArticles.map((article) => <ArticleCard key={article.id} article={article} onToggleStar={toggleStar} onToggleRead={toggleRead} />)}
             {!loading && !visibleArticles.length && (
               <section className="empty-state glaze-panel"><Rss /><h2>Nothing here yet</h2><p>Try another timeline, clear your search, or add a new feed.</p></section>
@@ -178,7 +207,7 @@ export default function App() {
 
         <aside className="right-rail desktop-only">
           <section className="side-card glaze-panel">
-            <div className="side-card-heading"><div><p className="eyebrow">Reading pulse</p><h2>Today</h2></div><Sparkles /></div>
+            <div className="side-card-heading"><div><p className="eyebrow">Reading pulse</p><h2>Current view</h2></div><Sparkles /></div>
             <dl className="stats-grid"><div><dt>Sources</dt><dd>{subscriptions.length}</dd></div><div><dt>Unread</dt><dd>{articles.filter((article) => article.unread).length}</dd></div><div><dt>Saved</dt><dd>{articles.filter((article) => article.starred).length}</dd></div></dl>
           </section>
           <section className="side-card glaze-panel">
@@ -190,7 +219,7 @@ export default function App() {
       </div>
 
       <nav className="mobile-nav mobile-only" aria-label="Mobile primary">
-        {navItems.map(({ id, label, icon: Icon }) => <button key={id} className={filter === id ? 'selected' : ''} onClick={() => selectFilter(id)}><Icon /><span>{label}</span></button>)}
+        {navItems.map(({ id, label, icon: Icon }) => <button key={id} className={filter === id ? 'selected' : ''} onClick={() => selectFilter(id)} aria-current={filter === id ? 'page' : undefined}><Icon /><span>{label}</span></button>)}
         <button onClick={() => setShowAddFeed(true)}><Plus /><span>Add</span></button>
       </nav>
 
