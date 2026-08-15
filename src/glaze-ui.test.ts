@@ -34,6 +34,12 @@ describe('GoreeCloud Feed Glaze UI readiness contract', () => {
     expect(app).not.toContain('className="category-summary"');
   });
 
+  it('reloads FreshRSS subscription authority after adding a feed', () => {
+    expect(app).toContain('async function refresh(nextFilter = filter, reloadSubscriptions = false)');
+    expect(app).toContain('!reloadSubscriptions && subscriptions.length');
+    expect(app).toContain('onAdded={() => void refresh(filter, true)}');
+  });
+
   it('does not expose placeholder notifications or settings controls', () => {
     expect(app).not.toContain('aria-label="Notifications"');
     expect(app).not.toContain('<span>Settings</span>');
