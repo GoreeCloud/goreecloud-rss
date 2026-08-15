@@ -11,6 +11,7 @@ const now = Date.now();
 export const demoArticles: Article[] = [
   {
     id: 'demo-1',
+    feedId: 'feed/tech',
     title: 'A calmer way to follow the web',
     source: 'Open Source Weekly',
     articleUrl: 'https://example.com/calm-web',
@@ -22,6 +23,7 @@ export const demoArticles: Article[] = [
   },
   {
     id: 'demo-2',
+    feedId: 'feed/design',
     title: 'Self-hosted software should feel great to use',
     source: 'Interface Notes',
     articleUrl: 'https://example.com/self-hosted-design',
@@ -33,6 +35,7 @@ export const demoArticles: Article[] = [
   },
   {
     id: 'demo-3',
+    feedId: 'feed/privacy',
     title: 'Why local-first reading still matters',
     source: 'Privacy Dispatch',
     articleUrl: 'https://example.com/local-reading',
@@ -44,6 +47,7 @@ export const demoArticles: Article[] = [
   },
   {
     id: 'demo-4',
+    feedId: 'feed/linux',
     title: 'Desktop and mobile from one GoreeCloud client surface',
     source: 'Linux Journal',
     articleUrl: 'https://example.com/cross-platform',
