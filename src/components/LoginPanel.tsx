@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { LockKeyhole, Rss, ShieldCheck } from 'lucide-react';
 import type { FeedAccount } from '../types';
 import { login } from '../lib/freshrss';
+import { isNativeClient } from '../lib/transport';
 
 interface LoginPanelProps {
   onAuthenticated: (account: FeedAccount) => void;
@@ -9,7 +10,7 @@ interface LoginPanelProps {
 }
 
 export function LoginPanel({ onAuthenticated, onUseDemo }: LoginPanelProps) {
-  const [server, setServer] = useState('/api/greader.php');
+  const [server, setServer] = useState(() => isNativeClient() ? 'https://rss.goreecloud.com/api/greader.php' : '/api/greader.php');
   const [username, setUsername] = useState('');
   const [apiPassword, setApiPassword] = useState('');
   const [error, setError] = useState('');
