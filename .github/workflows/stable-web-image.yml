@@ -1,0 +1,108 @@
+name: Stable Web Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'tsconfig.json'
+      - 'deploy/staging/**'
+      - 'scripts/verify-release-metadata.mjs'
+      - '.github/workflows/stable-web-image.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: stable-web-image-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Require Stable version metadata
+        shell: bash
+        run: |
+          APP_VERSION="$(node -p "require('./package.json').version")"
+          [[ "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          npm run release:check
+
+      - name: Validate Stable web client
+        run: |
+          npm test
+          npm run build
+          npm audit --audit-level=high
+
+      - name: Define immutable Stable image reference
+        id: image
+        shell: bash
+        run: |
+          APP_VERSION="$(node -p "require('./package.json').version")"
+          SHORT_SHA="${GITHUB_SHA::12}"
+          IMAGE="ghcr.io/goreecloud/goreecloud-rss-web:${APP_VERSION}-${SHORT_SHA}"
+          echo "version=$APP_VERSION" >> "$GITHUB_OUTPUT"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build Stable web image
+        run: docker build --pull --file deploy/staging/Dockerfile --tag "${{ steps.image.outputs.image }}" .
+
+      - name: Smoke-test Stable web image
+        shell: bash
+        run: |
+          docker run -d --rm --name goreecloud-feed-stable-image-test -p 127.0.0.1:18080:8080 "${{ steps.image.outputs.image }}"
+          trap 'docker stop goreecloud-feed-stable-image-test >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:18080/healthz >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:18080/healthz
+          curl --fail --silent http://127.0.0.1:18080/ | grep -q 'GoreeCloud'
+
+      - name: Publish Stable web image
+        id: publish
+        shell: bash
+        run: |
+          docker push "${{ steps.image.outputs.image }}" | tee /tmp/push-output.txt
+          DIGEST="$(sed -n 's/.*digest: \(sha256:[0-9a-f]\{64\}\).*/\1/p' /tmp/push-output.txt | tail -n 1)"
+          test -n "$DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+      - name: Record Stable web release evidence
+        shell: bash
+        run: |
+          mkdir -p stable-web-evidence
+          printf 'release=%s\ntarget=web\nstatus=Stable\n' "${{ steps.image.outputs.version }}" > stable-web-evidence/RELEASE
+          printf 'image=%s@%s\n' "${{ steps.image.outputs.image }}" "${{ steps.publish.outputs.digest }}" > stable-web-evidence/IMAGE_REFERENCE
+          printf 'source_revision=%s\nworkflow_run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > stable-web-evidence/SOURCE_REVISION
+          npm run release:check > stable-web-evidence/RELEASE_METADATA_VALIDATION.txt
+
+      - name: Upload Stable web release evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: goreecloud-feed-web-${{ steps.image.outputs.version }}-release-evidence
+          path: stable-web-evidence/*
+          if-no-files-found: error

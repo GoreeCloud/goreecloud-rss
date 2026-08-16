@@ -1,0 +1,17 @@
+{
+  "name": "GoreeCloud Feed",
+  "short_name": "Feed",
+  "description": "Private social-style RSS reading powered by FreshRSS.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f9fc",
+  "theme_color": "#f7f9fc",
+  "icons": [
+    {
+      "src": "/feed-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

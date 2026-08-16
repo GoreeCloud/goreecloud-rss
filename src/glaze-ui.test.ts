@@ -1,0 +1,75 @@
+import { describe, expect, it } from 'vitest';
+import html from '../index.html?raw';
+import app from './App.tsx?raw';
+import addFeedDialog from './components/AddFeedDialog.tsx?raw';
+import articleCard from './components/ArticleCard.tsx?raw';
+import loginPanel from './components/LoginPanel.tsx?raw';
+
+describe('GoreeCloud Feed Glaze UI readiness contract', () => {
+  it('marks the controlled shell and preserves accessible navigation', () => {
+    expect(app).toContain('data-glaze-ui="feed"');
+    expect(app).toContain('Skip to timeline');
+    expect(app).toContain('aria-current');
+    expect(app).toContain('aria-expanded={sidebarOpen}');
+  });
+
+  it('supports System, Light, and Dark appearance without remote UI assets', () => {
+    expect(app).toContain("type Theme = 'system' | 'light' | 'dark'");
+    expect(app).toContain("if (theme === 'system') return 'light'");
+    expect(app).toContain("if (theme === 'light') return 'dark'");
+    expect(app).toContain("return 'system'");
+    expect(html).toContain('name="color-scheme" content="light dark"');
+    expect(html).not.toMatch(/fonts\.(googleapis|gstatic)\.com/i);
+  });
+
+  it('keeps the browser API boundary same-origin except localhost development', () => {
+    const csp = html.match(/Content-Security-Policy[\s\S]*?content="([^"]+)"/)?.[1] ?? '';
+    expect(csp).toContain("connect-src 'self' http://localhost:* http://127.0.0.1:*");
+    expect(csp).not.toContain("connect-src 'self' https:");
+    expect(html).toContain('noindex,nofollow,noarchive');
+    expect(html).toContain('name="referrer" content="same-origin"');
+  });
+
+  it('keeps FreshRSS categories as functional accessible timeline controls', () => {
+    expect(app).toContain('className={`category-link ${category === name ? \'selected\' : \'\'}`}');
+    expect(app).toContain('aria-pressed={category === name}');
+    expect(app).toContain('categoryFeedIds.has(article.feedId)');
+    expect(app).not.toContain('className="category-summary"');
+  });
+
+  it('reloads FreshRSS subscription authority after adding a feed', () => {
+    expect(app).toContain('async function refresh(nextFilter = filter, reloadSubscriptions = false)');
+    expect(app).toContain('!reloadSubscriptions && subscriptions.length');
+    expect(app).toContain('onAdded={() => void refresh(filter, true)}');
+  });
+
+  it('provides a visible clipboard fallback when native sharing is unavailable', () => {
+    expect(articleCard).toContain('if (navigator.share)');
+    expect(articleCard).toContain('navigator.clipboard?.writeText');
+    expect(articleCard).toContain("document.execCommand('copy')");
+    expect(articleCard).toContain("shareStatus === 'copied' ? 'Copied'");
+    expect(articleCard).toContain('aria-live="polite"');
+  });
+
+  it('enforces modal keyboard focus containment and restoration', () => {
+    expect(addFeedDialog).toContain('aria-modal="true"');
+    expect(addFeedDialog).toContain("event.key !== 'Tab'");
+    expect(addFeedDialog).toContain('previousFocus?.focus()');
+    expect(addFeedDialog).toContain('busyRef.current');
+    expect(addFeedDialog).toContain('onCloseRef.current()');
+    expect(addFeedDialog).toContain('aria-busy={busy}');
+  });
+
+  it('exposes authentication help and busy state to assistive technology', () => {
+    expect(loginPanel).toContain('aria-describedby="api-address-help"');
+    expect(loginPanel).toContain('id="api-address-help"');
+    expect(loginPanel).toContain('aria-busy={busy}');
+    expect(loginPanel).toContain('disabled={busy}>Preview Glaze UI without signing in');
+  });
+
+  it('does not expose placeholder notifications or settings controls', () => {
+    expect(app).not.toContain('aria-label="Notifications"');
+    expect(app).not.toContain('<span>Settings</span>');
+    expect(app).toContain('Sign out');
+  });
+});

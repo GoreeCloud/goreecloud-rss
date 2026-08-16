@@ -1,0 +1,98 @@
+name: Staging Web Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/glaze-social-feed-foundation
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'tsconfig.json'
+      - 'deploy/staging/**'
+      - '.github/workflows/staging-image.yml'
+
+concurrency:
+  group: staging-image-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate and build web client
+        run: |
+          npm run release:check
+          npm test
+          npm run build
+
+      - name: Define immutable image reference
+        id: image
+        shell: bash
+        run: |
+          APP_VERSION="$(node -p "require('./package.json').version")"
+          SHORT_SHA="${GITHUB_SHA::12}"
+          IMAGE="ghcr.io/goreecloud/goreecloud-rss-web:${APP_VERSION}-${SHORT_SHA}"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build staging image
+        run: docker build --pull --file deploy/staging/Dockerfile --tag "${{ steps.image.outputs.image }}" .
+
+      - name: Smoke-test staging image
+        shell: bash
+        run: |
+          docker run -d --rm --name goreecloud-feed-image-test -p 127.0.0.1:18080:8080 "${{ steps.image.outputs.image }}"
+          trap 'docker stop goreecloud-feed-image-test >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:18080/healthz >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:18080/healthz
+          curl --fail --silent http://127.0.0.1:18080/ | grep -q 'GoreeCloud'
+
+      - name: Publish staging image
+        id: publish
+        shell: bash
+        run: |
+          docker push "${{ steps.image.outputs.image }}" | tee /tmp/push-output.txt
+          DIGEST="$(sed -n 's/.*digest: \(sha256:[0-9a-f]\{64\}\).*/\1/p' /tmp/push-output.txt | tail -n 1)"
+          test -n "$DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+      - name: Record staging image evidence
+        shell: bash
+        run: |
+          mkdir -p staging-image-evidence
+          printf 'image=%s@%s\n' "${{ steps.image.outputs.image }}" "${{ steps.publish.outputs.digest }}" > staging-image-evidence/IMAGE_REFERENCE
+          printf 'source_revision=%s\nworkflow_run=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > staging-image-evidence/SOURCE_REVISION
+          npm run release:check > staging-image-evidence/RELEASE_METADATA_VALIDATION.txt
+
+      - name: Upload staging image evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: goreecloud-feed-staging-image-evidence
+          path: staging-image-evidence/*
+          if-no-files-found: error
