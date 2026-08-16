@@ -2,12 +2,6 @@ name: Release Lock Metadata Sync
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feature/glaze-social-feed-foundation
-    paths:
-      - 'package.json'
-      - '.github/workflows/release-lock-sync.yml'
 
 permissions:
   contents: write
@@ -39,5 +33,5 @@ jobs:
           git config user.name 'GoreeCloud Release Automation'
           git config user.email '295260680+GoreeCloud@users.noreply.github.com'
           git add package-lock.json
-          git commit -m 'Sync lock metadata for Stable 0.1.0'
-          git push origin HEAD:feature/glaze-social-feed-foundation
+          git commit -m "Sync lock metadata for ${GITHUB_REF_NAME}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
