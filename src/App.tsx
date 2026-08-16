@@ -14,6 +14,7 @@ import {
   Search,
   Sparkles,
   Sun,
+  X,
 } from 'lucide-react';
 import { AddFeedDialog } from './components/AddFeedDialog';
 import { ArticleCard } from './components/ArticleCard';
@@ -110,14 +111,16 @@ export default function App() {
     );
   }, [category, subscriptions]);
 
+  const normalizedQuery = query.trim();
+
   const visibleArticles = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = normalizedQuery.toLowerCase();
     return articles.filter((article) => {
       if (categoryFeedIds && (!article.feedId || !categoryFeedIds.has(article.feedId))) return false;
       if (!needle) return true;
       return `${article.title} ${article.source} ${article.excerpt}`.toLowerCase().includes(needle);
     });
-  }, [articles, categoryFeedIds, query]);
+  }, [articles, categoryFeedIds, normalizedQuery]);
 
   const categoryCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -126,6 +129,30 @@ export default function App() {
       .forEach((name) => map.set(name, (map.get(name) ?? 0) + 1));
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [subscriptions]);
+
+  const categoryFeedCount = category
+    ? categoryCounts.find(([name]) => name === category)?.[1] ?? 0
+    : 0;
+
+  const resultSummary = normalizedQuery
+    ? `${visibleArticles.length} matching ${visibleArticles.length === 1 ? 'post' : 'posts'}`
+    : category
+      ? `${visibleArticles.length} loaded ${visibleArticles.length === 1 ? 'post' : 'posts'}`
+      : `${visibleArticles.length} ${visibleArticles.length === 1 ? 'post' : 'posts'}`;
+
+  const emptyHeading = normalizedQuery
+    ? 'No matching posts'
+    : category
+      ? 'No loaded posts in this category'
+      : 'Nothing here yet';
+
+  const emptyMessage = normalizedQuery && category
+    ? `No posts in ${category} match “${normalizedQuery}”. Clear the search to see the category timeline.`
+    : normalizedQuery
+      ? `No posts match “${normalizedQuery}”. Try another search or clear the current one.`
+      : category
+        ? `${categoryFeedCount} ${categoryFeedCount === 1 ? 'feed is' : 'feeds are'} assigned to this category, but none of its posts are present in the current loaded timeline.`
+        : 'Try another timeline or add a new feed.';
 
   async function toggleStar(article: Article) {
     const next = !article.starred;
@@ -236,10 +263,10 @@ export default function App() {
                     onClick={() => selectCategory(name)}
                     aria-pressed={category === name}
                     aria-label={`${name}, ${count} ${count === 1 ? 'feed' : 'feeds'}`}
-                    title={name}
+                    title={`${name} — ${count} ${count === 1 ? 'feed' : 'feeds'}`}
                   >
                     <span className="category-name">{name}</span>
-                    <small className="category-count">{count}</small>
+                    <small className="category-count" aria-hidden="true">{count}</small>
                   </button>
                 ))
               : <p className="category-empty">No categories yet.</p>}
@@ -252,14 +279,27 @@ export default function App() {
 
         <main id="timeline" tabIndex={-1}>
           <section className="timeline-heading">
-            <div><p className="eyebrow">Your timeline</p><h1>{timelineLabel}</h1></div>
-            <span>{visibleArticles.length} posts</span>
+            <div>
+              <p className="eyebrow">Your timeline</p>
+              <h1>{timelineLabel}</h1>
+              {normalizedQuery && (
+                <div className="active-filter-row" aria-label="Active timeline filters">
+                  <span className="filter-chip"><Search aria-hidden="true" /><span>Search: {normalizedQuery}</span><button type="button" onClick={() => setQuery('')} aria-label={`Clear search for ${normalizedQuery}`}><X /></button></span>
+                </div>
+              )}
+            </div>
+            <span className="timeline-result-summary">{resultSummary}</span>
           </section>
           {notice && <div className="notice-banner" role="status">{notice}</div>}
           <div className="feed-stack" aria-busy={loading}>
             {visibleArticles.map((article) => <ArticleCard key={article.id} article={article} onToggleStar={toggleStar} onToggleRead={toggleRead} />)}
             {!loading && !visibleArticles.length && (
-              <section className="empty-state glaze-panel"><Rss /><h2>Nothing here yet</h2><p>Try another timeline, clear your search, or add a new feed.</p></section>
+              <section className="empty-state glaze-panel">
+                <Rss />
+                <h2>{emptyHeading}</h2>
+                <p>{emptyMessage}</p>
+                {normalizedQuery && <button className="empty-state-action" type="button" onClick={() => setQuery('')}>Clear search</button>}
+              </section>
             )}
           </div>
         </main>
