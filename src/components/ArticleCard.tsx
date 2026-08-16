@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Bookmark, Check, ExternalLink, Share2, Undo2 } from 'lucide-react';
 import type { Article } from '../types';
 
@@ -6,6 +7,8 @@ interface ArticleCardProps {
   onToggleStar: (article: Article) => void;
   onToggleRead: (article: Article) => void;
 }
+
+type ShareStatus = 'idle' | 'copied' | 'failed';
 
 function relativeTime(date: Date): string {
   const seconds = Math.round((date.getTime() - Date.now()) / 1000);
@@ -22,15 +25,62 @@ function initial(source: string) {
   return source.trim().slice(0, 1).toUpperCase() || 'R';
 }
 
+async function copyShareText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Continue to the legacy copy path for browsers that expose Clipboard API
+    // but reject it because of permissions or runtime policy.
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  textarea.style.pointerEvents = 'none';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    textarea.remove();
+  }
+}
+
 export function ArticleCard({ article, onToggleStar, onToggleRead }: ArticleCardProps) {
+  const [shareStatus, setShareStatus] = useState<ShareStatus>('idle');
+
   const share = async () => {
     if (!article.articleUrl) return;
+
+    setShareStatus('idle');
+
     if (navigator.share) {
-      await navigator.share({ title: article.title, url: article.articleUrl }).catch(() => undefined);
-    } else {
-      await navigator.clipboard?.writeText(article.articleUrl).catch(() => undefined);
+      try {
+        await navigator.share({ title: article.title, url: article.articleUrl });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+      }
     }
+
+    const copied = await copyShareText(`${article.title}\n${article.articleUrl}`);
+    setShareStatus(copied ? 'copied' : 'failed');
+
+    window.setTimeout(() => {
+      setShareStatus('idle');
+    }, 2500);
   };
+
+  const shareLabel = shareStatus === 'copied' ? 'Copied' : shareStatus === 'failed' ? 'Copy failed' : 'Share';
 
   return (
     <article className={`article-card glaze-panel ${article.unread ? 'is-unread' : ''}`}>
@@ -57,7 +107,10 @@ export function ArticleCard({ article, onToggleStar, onToggleRead }: ArticleCard
           {article.unread ? <Check /> : <Undo2 />}
           <span>{article.unread ? 'Mark read' : 'Unread'}</span>
         </button>
-        <button onClick={share} disabled={!article.articleUrl}><Share2 /><span>Share</span></button>
+        <button onClick={share} disabled={!article.articleUrl} aria-label={shareLabel}>
+          <Share2 />
+          <span aria-live="polite">{shareLabel}</span>
+        </button>
         {article.articleUrl && (
           <a href={article.articleUrl} target="_blank" rel="noopener noreferrer"><ExternalLink /><span>Open</span></a>
         )}
