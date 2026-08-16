@@ -3,6 +3,7 @@ import {
   Bookmark,
   CircleUserRound,
   Home,
+  ListChecks,
   LogOut,
   Menu,
   Monitor,
@@ -17,11 +18,13 @@ import {
 import { AddFeedDialog } from './components/AddFeedDialog';
 import { ArticleCard } from './components/ArticleCard';
 import { LoginPanel } from './components/LoginPanel';
+import { ManageFeedsDialog } from './components/ManageFeedsDialog';
 import { getSubscriptions, getTimeline, setRead, setStarred } from './lib/freshrss';
 import { demoArticles, demoSubscriptions } from './lib/demo';
 import type { Article, FeedAccount, Subscription, TimelineFilter } from './types';
 import './styles.css';
 import './readiness.css';
+import './feed-management.css';
 
 type Theme = 'system' | 'light' | 'dark';
 
@@ -55,6 +58,7 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [theme, setTheme] = useState<Theme>('system');
   const [showAddFeed, setShowAddFeed] = useState(false);
+  const [showManageFeeds, setShowManageFeeds] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -91,6 +95,12 @@ export default function App() {
     void refresh(filter);
   }, [account, demo, filter]);
 
+  useEffect(() => {
+    if (category && !subscriptions.some((subscription) => subscription.categories.includes(category))) {
+      setCategory(null);
+    }
+  }, [category, subscriptions]);
+
   const categoryFeedIds = useMemo(() => {
     if (!category) return null;
     return new Set(
@@ -114,7 +124,7 @@ export default function App() {
     subscriptions
       .flatMap((subscription) => subscription.categories)
       .forEach((name) => map.set(name, (map.get(name) ?? 0) + 1));
-    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(0, 8);
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [subscriptions]);
 
   async function toggleStar(article: Article) {
@@ -154,6 +164,7 @@ export default function App() {
     setNotice('');
     setSidebarOpen(false);
     setShowAddFeed(false);
+    setShowManageFeeds(false);
   }
 
   function selectFilter(next: TimelineFilter) {
@@ -210,7 +221,12 @@ export default function App() {
             ))}
           </nav>
           <button className="add-feed-button" onClick={() => setShowAddFeed(true)}><Plus /><span>Add feed</span></button>
-          <section className="rail-section desktop-only" aria-labelledby="categories-heading">
+          {!demo && (
+            <button className="manage-feeds-button" onClick={() => setShowManageFeeds(true)}>
+              <ListChecks /><span>Manage feeds</span>
+            </button>
+          )}
+          <section className="rail-section" aria-labelledby="categories-heading">
             <h2 id="categories-heading">Categories</h2>
             {categoryCounts.length
               ? categoryCounts.map(([name, count]) => (
@@ -219,11 +235,14 @@ export default function App() {
                     className={`category-link ${category === name ? 'selected' : ''}`}
                     onClick={() => selectCategory(name)}
                     aria-pressed={category === name}
+                    aria-label={`${name}, ${count} ${count === 1 ? 'feed' : 'feeds'}`}
+                    title={name}
                   >
-                    <span>{name}</span><small>{count}</small>
+                    <span className="category-name">{name}</span>
+                    <small className="category-count">{count}</small>
                   </button>
                 ))
-              : <p>No categories yet.</p>}
+              : <p className="category-empty">No categories yet.</p>}
           </section>
           <div className="rail-footer">
             <button onClick={() => setTheme((current) => nextTheme(current))} aria-label={`Appearance: ${theme}. Activate for next mode.`}><ThemeIcon theme={theme} /><span>Appearance: {theme}</span></button>
@@ -269,6 +288,15 @@ export default function App() {
           demo={demo}
           onClose={() => setShowAddFeed(false)}
           onAdded={() => void refresh(filter, true)}
+        />
+      )}
+
+      {showManageFeeds && account && !demo && (
+        <ManageFeedsDialog
+          account={account}
+          subscriptions={subscriptions}
+          onClose={() => setShowManageFeeds(false)}
+          onRemoved={async () => { await refresh(filter, true); }}
         />
       )}
     </div>

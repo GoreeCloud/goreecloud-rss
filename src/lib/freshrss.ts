@@ -227,3 +227,16 @@ export async function addSubscription(account: FeedAccount, feedUrl: string): Pr
     body,
   });
 }
+
+export async function removeSubscription(account: FeedAccount, subscriptionId: string): Promise<void> {
+  const id = subscriptionId.trim();
+  if (!id) throw new FreshRssError('FreshRSS subscription identifier is missing.');
+
+  const token = await getEditToken(account);
+  const body = new URLSearchParams({ ac: 'unsubscribe', s: id, T: token });
+  await request(account, '/reader/api/0/subscription/edit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+    body,
+  });
+}

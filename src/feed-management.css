@@ -1,0 +1,247 @@
+/* Stable-candidate feed and category management refinements.
+   These rules intentionally override the early foundation rail sizing without
+   changing the shared Glaze UI tokens in styles.css. */
+
+.layout {
+  grid-template-columns: 270px minmax(0, 720px) 310px;
+}
+
+.add-feed-button {
+  margin-bottom: 10px;
+}
+
+.manage-feeds-button {
+  width: 100%;
+  min-height: 44px;
+  margin: 0 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.manage-feeds-button:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: var(--accent-soft);
+}
+
+.manage-feeds-button svg {
+  width: 18px;
+}
+
+.rail-section h2 {
+  margin: 0 0 8px;
+}
+
+.category-link {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 9px 7px 12px;
+  text-align: left;
+}
+
+.category-link.selected {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.category-name {
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.28;
+  font-size: 14px;
+  font-weight: 620;
+}
+
+.category-count {
+  min-width: 30px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.category-link.selected .category-count {
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface-strong));
+  color: var(--accent);
+}
+
+.category-empty {
+  margin: 8px 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.manage-feeds-dialog {
+  width: min(700px, calc(100vw - 32px));
+  max-height: min(82vh, 760px);
+  display: flex;
+  flex-direction: column;
+}
+
+.manage-feed-search {
+  position: relative;
+  margin: 14px 0 12px;
+}
+
+.manage-feed-search > svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 18px;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.dialog .manage-feed-search input {
+  padding-left: 42px;
+}
+
+.manage-feed-list {
+  min-height: 120px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+  padding: 2px 3px 2px 0;
+}
+
+.manage-feed-row {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-muted);
+  padding: 11px 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.manage-feed-meta {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.manage-feed-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.manage-feed-copy strong,
+.manage-feed-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manage-feed-copy small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.unfollow-button,
+.danger-button,
+.compact-button {
+  min-height: 38px;
+  border-radius: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.unfollow-button {
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+  color: var(--muted);
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.unfollow-button:hover {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--line));
+}
+
+.unfollow-button svg {
+  width: 16px;
+}
+
+.manage-feed-confirm {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.manage-feed-confirm > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.compact-button {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.danger-button {
+  min-height: 38px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface-strong));
+  color: var(--danger);
+  padding: 0 13px;
+}
+
+.manage-feed-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 24px 12px;
+}
+
+@media (max-width: 1180px) {
+  .layout {
+    grid-template-columns: 240px minmax(0, 720px);
+  }
+}
+
+@media (max-width: 820px) {
+  .manage-feed-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .unfollow-button {
+    justify-self: start;
+  }
+
+  .manage-feed-confirm {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .manage-feed-confirm > span {
+    grid-column: 1 / -1;
+  }
+}
