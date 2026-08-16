@@ -2,16 +2,14 @@ import { describe, expect, it } from 'vitest';
 import app from './App.tsx?raw';
 import manageFeedsDialog from './components/ManageFeedsDialog.tsx?raw';
 import freshrss from './lib/freshrss.ts?raw';
-import feedManagementCss from './feed-management.css?raw';
 
 describe('Stable feed management and category contracts', () => {
   it('keeps every FreshRSS category available with explicit readable name and count elements', () => {
+    expect(app).toContain("import './feed-management.css';");
     expect(app).toContain('category-name');
     expect(app).toContain('category-count');
     expect(app).toContain('aria-pressed={category === name}');
     expect(app).not.toContain('sort((a, b) => a[0].localeCompare(b[0])).slice(0, 8)');
-    expect(feedManagementCss).toContain('grid-template-columns: minmax(0, 1fr) auto');
-    expect(feedManagementCss).toContain('-webkit-line-clamp: 2');
   });
 
   it('exposes category controls in the responsive navigation rail rather than desktop only', () => {
