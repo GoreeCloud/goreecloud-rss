@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import html from '../index.html?raw';
 import app from './App.tsx?raw';
 import addFeedDialog from './components/AddFeedDialog.tsx?raw';
+import articleCard from './components/ArticleCard.tsx?raw';
 import loginPanel from './components/LoginPanel.tsx?raw';
 
 describe('GoreeCloud Feed Glaze UI readiness contract', () => {
@@ -40,6 +41,14 @@ describe('GoreeCloud Feed Glaze UI readiness contract', () => {
     expect(app).toContain('async function refresh(nextFilter = filter, reloadSubscriptions = false)');
     expect(app).toContain('!reloadSubscriptions && subscriptions.length');
     expect(app).toContain('onAdded={() => void refresh(filter, true)}');
+  });
+
+  it('provides a visible clipboard fallback when native sharing is unavailable', () => {
+    expect(articleCard).toContain('if (navigator.share)');
+    expect(articleCard).toContain('navigator.clipboard?.writeText');
+    expect(articleCard).toContain("document.execCommand('copy')");
+    expect(articleCard).toContain("shareStatus === 'copied' ? 'Copied'");
+    expect(articleCard).toContain('aria-live="polite"');
   });
 
   it('enforces modal keyboard focus containment and restoration', () => {
