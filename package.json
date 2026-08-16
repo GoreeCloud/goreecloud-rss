@@ -1,6 +1,6 @@
 {
   "name": "@goreecloud/feed",
-  "version": "0.1.0-dev.1",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "description": "Glaze UI social-feed client for FreshRSS across web, desktop, and Android.",
