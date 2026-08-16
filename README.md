@@ -4,9 +4,9 @@ GoreeCloud Feed is a GoreeCloud-owned RSS client that keeps **FreshRSS as the au
 
 ## Targets
 
-- Responsive web client
-- Linux desktop through Tauri 2
-- Android APK through Tauri 2
+- Responsive web client — **Stable 0.1.0**
+- Linux desktop through Tauri 2 — development/acceptance target
+- Android APK through Tauri 2 — development/acceptance target
 
 The same React + TypeScript interface is shared across targets so navigation, authentication behavior, FreshRSS synchronization, accessibility, and Glaze UI do not fragment into unrelated clients.
 
@@ -28,38 +28,33 @@ Production endpoints are deliberately source controlled:
 
 This prevents the production client from becoming a generic credential-bearing network requester.
 
-## Current foundation
+## Stable web baseline
 
-Implemented or scaffolded in the current development milestone:
+GoreeCloud Feed Web 0.1.0 includes:
 
 - Glaze UI social timeline shell
 - System, Light, and Dark appearance with a return path to System mode
-- Desktop three-region layout
-- Responsive Android/mobile layout with bottom navigation
+- Desktop three-region layout and responsive mobile behavior
 - Accessible navigation state and skip-to-timeline support
-- FreshRSS ClientLogin authentication
+- FreshRSS ClientLogin authentication with per-user isolation
 - Subscription loading with authoritative refresh after add-feed mutations
 - Home, Unread, and Saved timelines
 - FreshRSS-backed category filtering derived from subscription membership
-- Timeline search
+- Timeline search and category/search intersection behavior
 - Save/unsave article mutation
 - Read/unread article mutation
-- Add-feed mutation with a non-mutating preview mode
-- Demo timeline for UI development without credentials
+- Add-feed and manage/unfollow mutations
 - Functional sign-out that clears memory-held account and loaded client state
 - Plain-text handling of untrusted RSS summary HTML
-- HTTP/HTTPS external-link validation
-- Browser and native content-security policies
-- Minimal, scoped Tauri native permissions
+- Safe HTTP/HTTPS external-link validation
+- Browser content-security policy and same-origin production API routing
+- Clipboard fallback with visible **Copied** feedback when native browser sharing is unavailable
 - Deterministic JavaScript and Rust dependency lockfiles
 - Locked dependency validation and npm vulnerability auditing in CI
 - Release metadata validation across npm, Tauri, and Cargo identities
-- Web unit/build CI
-- Linux desktop and Android APK build validation
-- Native artifact checksum and source-revision provenance evidence
-- PR-scoped CI concurrency that cancels superseded validation runs
+- Exact-source web container build evidence with immutable digest output
 
-The current repository state is a **Stable candidate under validation**, not an approved Stable release.
+The Linux desktop and Android targets continue to share this source and UI, but they are **not represented as Stable 0.1.0 distributed native releases** until their target-specific signing, installation, upgrade/rollback, and representative device acceptance gates are completed.
 
 ## Development
 
@@ -103,9 +98,9 @@ The native CI workflow performs the same icon-generation sequence automatically 
 
 ## Security notes
 
-The current development milestone keeps the FreshRSS API password and returned authentication token in memory only. They are not persisted to browser storage. Native secure credential persistence is intentionally deferred until a reviewed platform-secure storage implementation is added.
+The current release keeps the FreshRSS API password and returned authentication token in memory only. They are not persisted to browser storage. Native secure credential persistence is intentionally deferred until a reviewed platform-secure storage implementation is added.
 
-Raw RSS HTML is not injected into the interface. Article summaries are reduced to plain text in this milestone. Production browser connectivity is restricted to the same origin, and the native shell is restricted to the approved GoreeCloud FreshRSS host plus localhost development.
+Raw RSS HTML is not injected into the interface. Article summaries are reduced to plain text. Production browser connectivity is restricted to the same origin, and the native shell is restricted to the approved GoreeCloud FreshRSS host plus localhost development.
 
 See [docs/SECURITY.md](docs/SECURITY.md) for the full trust-boundary notes.
 
@@ -118,7 +113,9 @@ See [docs/SECURITY.md](docs/SECURITY.md) for the full trust-boundary notes.
 
 ## Release boundary
 
-Successful source and build validation does not by itself authorize a production deployment or Stable release. Real multi-user isolation validation, controlled web publication, representative Glaze UI acceptance, release signing/update behavior, monitoring/recovery review, and final source-to-artifact provenance remain release gates.
+**Stable status is target-specific.** Web 0.1.0 is the first approved Stable target after controlled private publication, isolated-user validation, real FreshRSS mutation testing, Glaze UI acceptance, exact-image deployment, and rollback-preserving digest pinning. Linux and Android remain development/acceptance targets until their remaining native release gates are complete.
+
+Successful source and build validation does not automatically authorize another target or later version as Stable.
 
 ## License
 
