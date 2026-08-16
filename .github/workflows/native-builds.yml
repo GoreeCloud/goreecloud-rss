@@ -59,7 +59,7 @@ jobs:
           printf 'source_revision=%s\nworkflow_run=%s\nplatform=linux-amd64-deb\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > release-evidence/linux/SOURCE_REVISION
           npm run release:check > release-evidence/linux/RELEASE_METADATA_VALIDATION.txt
       - name: Upload Linux Debian package
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: goreecloud-feed-linux-amd64-deb
           path: |
@@ -115,7 +115,7 @@ jobs:
           printf 'source_revision=%s\nworkflow_run=%s\nplatform=android-debug-apk\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > release-evidence/android/SOURCE_REVISION
           npm run release:check > release-evidence/android/RELEASE_METADATA_VALIDATION.txt
       - name: Upload APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: goreecloud-feed-android-debug
           path: |

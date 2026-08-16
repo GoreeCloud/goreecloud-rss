@@ -91,7 +91,7 @@ jobs:
           npm run release:check > staging-image-evidence/RELEASE_METADATA_VALIDATION.txt
 
       - name: Upload staging image evidence
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: goreecloud-feed-staging-image-evidence
           path: staging-image-evidence/*
