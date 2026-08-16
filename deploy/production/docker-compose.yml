@@ -1,0 +1,29 @@
+name: goreecloud-feed
+
+services:
+  goreecloud-feed:
+    image: "${GOREECLOUD_FEED_IMAGE:?Set GOREECLOUD_FEED_IMAGE to the approved Stable tag-and-digest GHCR reference}"
+    container_name: goreecloud-feed
+    restart: unless-stopped
+    user: "101:101"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    expose:
+      - "8080"
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  proxy:
+    external: true
