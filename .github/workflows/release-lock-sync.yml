@@ -1,0 +1,43 @@
+name: Release Lock Metadata Sync
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/glaze-social-feed-foundation
+    paths:
+      - 'package.json'
+      - '.github/workflows/release-lock-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-package-lock:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Synchronize lock metadata from package.json
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Verify release metadata
+        run: npm run release:check
+      - name: Commit synchronized lock metadata when required
+        shell: bash
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo 'package-lock.json is already synchronized.'
+            exit 0
+          fi
+          test -z "$(git diff --name-only -- . ':!package-lock.json')"
+          git config user.name 'GoreeCloud Release Automation'
+          git config user.email '295260680+GoreeCloud@users.noreply.github.com'
+          git add package-lock.json
+          git commit -m 'Sync lock metadata for Stable 0.1.0'
+          git push origin HEAD:feature/glaze-social-feed-foundation
