@@ -19,3 +19,22 @@ Changes should include:
 - improve desktop and mobile parity
 - maintain FreshRSS compatibility
 - keep Stable release boundaries target-specific
+
+## Product polish roadmap
+
+Upcoming improvements should continue the unified GoreeCloud experience:
+
+- refine article cards with stronger hierarchy and clearer reading states
+- improve responsive navigation transitions across desktop, tablet, and mobile
+- expand Glaze UI component consistency across RSS interactions
+- improve empty states, loading states, and error recovery experiences
+- continue accessibility validation for keyboard and touch workflows
+
+## Release discipline
+
+Feature work should preserve:
+
+- FreshRSS as the authoritative feed backend
+- user-controlled subscriptions as the timeline source
+- privacy-first credential handling
+- reproducible builds and documented validation
