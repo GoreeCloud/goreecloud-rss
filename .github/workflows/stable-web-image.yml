@@ -101,7 +101,7 @@ jobs:
           npm run release:check > stable-web-evidence/RELEASE_METADATA_VALIDATION.txt
 
       - name: Upload Stable web release evidence
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: goreecloud-feed-web-${{ steps.image.outputs.version }}-release-evidence
           path: stable-web-evidence/*
